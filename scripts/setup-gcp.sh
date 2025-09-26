@@ -8,9 +8,20 @@ REGION="us-central1"
 DB_INSTANCE_NAME="library-db-instance"
 DB_NAME="library_db"
 DB_USER="library_user"
+SQL_EDITION="ENTERPRISE"
+SQL_TIER="db-f1-micro"
+
+if [[ "$SQL_TIER" == "db-f1-micro" && "$SQL_EDITION" != "ENTERPRISE" ]]; then
+  echo "❌ The tier $SQL_TIER is only available for the ENTERPRISE edition."
+  echo "Please select a compatible edition or adjust the tier accordingly."
+  exit 1
+fi
 
 echo "🔧 Setting up Google Cloud Platform resources"
 echo "Project ID: $PROJECT_ID"
+
+echo "Using Cloud SQL edition: $SQL_EDITION"
+echo "Using tier: $SQL_TIER"
 
 # Enable required APIs
 echo "📡 Enabling required APIs..."
@@ -25,7 +36,8 @@ gcloud services enable run.googleapis.com \
 echo "🗄️ Creating Cloud SQL PostgreSQL instance..."
 gcloud sql instances create $DB_INSTANCE_NAME \
   --database-version=POSTGRES_15 \
-  --tier=db-f1-micro \
+  --edition=$SQL_EDITION \
+  --tier=$SQL_TIER \
   --region=$REGION \
   --project $PROJECT_ID
 

@@ -1,40 +1,44 @@
 # Multi-stage build for production optimization
 FROM node:18-alpine AS base
 
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat \
+  && corepack enable
+
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
+# Install all dependencies for building the project
+FROM base AS deps
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack pnpm install --frozen-lockfile
+
+# Install only production dependencies for the runtime image
+FROM base AS prod-deps
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack pnpm install --frozen-lockfile --prod
 
 # Rebuild the source code only when needed
 FROM base AS builder
-WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN pnpm prisma generate
 
 # Build the application
-RUN npm run build
+RUN pnpm run build
 
 # Production image, copy all the files and run the app
 FROM base AS runner
-WORKDIR /app
 
 ENV NODE_ENV=production
 
 # Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nestjs
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nestjs
 
 # Copy built application
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 
@@ -50,4 +54,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8080/health || exit 1
 
 # Start the application
-CMD ["npm", "run", "start:prod"]
+CMD ["pnpm", "run", "start:prod"]
