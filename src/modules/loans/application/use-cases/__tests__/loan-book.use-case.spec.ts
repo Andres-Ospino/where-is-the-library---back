@@ -1,0 +1,139 @@
+import { LoanBookUseCase } from "../loan-book.use-case"
+import { Book } from "@/modules/catalog/domain/entities/book.entity"
+import { Member } from "@/modules/members/domain/entities/member.entity"
+import { Loan } from "../../domain/entities/loan.entity"
+import { NotFoundError } from "@/modules/shared/errors/not-found.error"
+import { ConflictError } from "@/modules/shared/errors/conflict.error"
+import type { LoanRepositoryPort } from "../../domain/ports/loan-repository.port"
+import type { BookRepositoryPort } from "@/modules/catalog/domain/ports/book-repository.port"
+import type { MemberRepositoryPort } from "@/modules/members/domain/ports/member-repository.port"
+import type { DateProviderPort } from "@/modules/shared/ports/date-provider.port"
+import type { EventBusPort } from "@/modules/shared/ports/event-bus.port"
+import type { PrismaService } from "@/core/database/prisma.service"
+
+describe("LoanBookUseCase", () => {
+  let useCase: LoanBookUseCase
+  let mockLoanRepository: jest.Mocked<LoanRepositoryPort>
+  let mockBookRepository: jest.Mocked<BookRepositoryPort>
+  let mockMemberRepository: jest.Mocked<MemberRepositoryPort>
+  let mockDateProvider: jest.Mocked<DateProviderPort>
+  let mockEventBus: jest.Mocked<EventBusPort>
+  let mockPrisma: jest.Mocked<PrismaService>
+
+  beforeEach(() => {
+    mockLoanRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      findByBookId: jest.fn(),
+      findByMemberId: jest.fn(),
+      findActiveLoans: jest.fn(),
+      findActiveLoanByBookId: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as jest.Mocked<LoanRepositoryPort>
+
+    mockBookRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      findByTitle: jest.fn(),
+      findByAuthor: jest.fn(),
+    } as jest.Mocked<BookRepositoryPort>
+
+    mockMemberRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      findByEmail: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as jest.Mocked<MemberRepositoryPort>
+
+    mockDateProvider = {
+      now: jest.fn(),
+    } as jest.Mocked<DateProviderPort>
+
+    mockEventBus = {
+      publish: jest.fn(),
+    } as jest.Mocked<EventBusPort>
+
+    mockPrisma = {
+      $transaction: jest.fn(),
+    } as jest.Mocked<PrismaService>
+
+    useCase = new LoanBookUseCase(
+      mockLoanRepository,
+      mockBookRepository,
+      mockMemberRepository,
+      mockDateProvider,
+      mockEventBus,
+      mockPrisma,
+    )
+  })
+
+  it("should loan a book successfully", async () => {
+    // Arrange
+    const command = { bookId: 1, memberId: 1 }
+    const book = Book.fromPersistence(1, "Test Book", "Test Author", true)
+    const member = Member.fromPersistence(1, "John Doe", "john@example.com")
+    const loanDate = new Date("2024-01-15")
+    const loan = Loan.fromPersistence(1, 1, 1, loanDate)
+
+    mockBookRepository.findById.mockResolvedValue(book)
+    mockMemberRepository.findById.mockResolvedValue(member)
+    mockLoanRepository.findActiveLoanByBookId.mockResolvedValue(null)
+    mockDateProvider.now.mockReturnValue(loanDate)
+    mockLoanRepository.save.mockResolvedValue(loan)
+    mockPrisma.$transaction.mockImplementation(async (callback: any) => {
+      return await callback(mockPrisma)
+    })
+
+    // Act
+    const result = await useCase.execute(command)
+
+    // Assert
+    expect(mockBookRepository.findById).toHaveBeenCalledWith(1)
+    expect(mockMemberRepository.findById).toHaveBeenCalledWith(1)
+    expect(mockLoanRepository.findActiveLoanByBookId).toHaveBeenCalledWith(1)
+    expect(result).toEqual(loan)
+  })
+
+  it("should throw NotFoundError when book does not exist", async () => {
+    // Arrange
+    const command = { bookId: 999, memberId: 1 }
+    mockBookRepository.findById.mockResolvedValue(null)
+
+    // Act & Assert
+    await expect(useCase.execute(command)).rejects.toThrow(NotFoundError)
+    expect(mockBookRepository.findById).toHaveBeenCalledWith(999)
+  })
+
+  it("should throw NotFoundError when member does not exist", async () => {
+    // Arrange
+    const command = { bookId: 1, memberId: 999 }
+    const book = Book.fromPersistence(1, "Test Book", "Test Author", true)
+
+    mockBookRepository.findById.mockResolvedValue(book)
+    mockMemberRepository.findById.mockResolvedValue(null)
+
+    // Act & Assert
+    await expect(useCase.execute(command)).rejects.toThrow(NotFoundError)
+    expect(mockMemberRepository.findById).toHaveBeenCalledWith(999)
+  })
+
+  it("should throw ConflictError when book is not available", async () => {
+    // Arrange
+    const command = { bookId: 1, memberId: 1 }
+    const book = Book.fromPersistence(1, "Test Book", "Test Author", false)
+    const member = Member.fromPersistence(1, "John Doe", "john@example.com")
+
+    mockBookRepository.findById.mockResolvedValue(book)
+    mockMemberRepository.findById.mockResolvedValue(member)
+
+    // Act & Assert
+    await expect(useCase.execute(command)).rejects.toThrow(ConflictError)
+  })
+})

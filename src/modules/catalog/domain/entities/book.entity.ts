@@ -1,0 +1,69 @@
+import { ValidationError } from "@/modules/shared/errors/validation.error"
+
+export class Book {
+  constructor(
+    private readonly _id: number | null,
+    private readonly _title: string,
+    private readonly _author: string,
+    private _available: boolean,
+  ) {
+    this.validateTitle(_title)
+    this.validateAuthor(_author)
+  }
+
+  static create(title: string, author: string): Book {
+    return new Book(null, title, author, true)
+  }
+
+  static fromPersistence(id: number, title: string, author: string, available: boolean): Book {
+    return new Book(id, title, author, available)
+  }
+
+  get id(): number | null {
+    return this._id
+  }
+
+  get title(): string {
+    return this._title
+  }
+
+  get author(): string {
+    return this._author
+  }
+
+  get available(): boolean {
+    return this._available
+  }
+
+  markAsUnavailable(): void {
+    if (!this._available) {
+      throw new ValidationError("Book is already unavailable")
+    }
+    this._available = false
+  }
+
+  markAsAvailable(): void {
+    if (this._available) {
+      throw new ValidationError("Book is already available")
+    }
+    this._available = true
+  }
+
+  private validateTitle(title: string): void {
+    if (!title || title.trim().length === 0) {
+      throw new ValidationError("Book title cannot be empty")
+    }
+    if (title.length > 255) {
+      throw new ValidationError("Book title cannot exceed 255 characters")
+    }
+  }
+
+  private validateAuthor(author: string): void {
+    if (!author || author.trim().length === 0) {
+      throw new ValidationError("Book author cannot be empty")
+    }
+    if (author.length > 255) {
+      throw new ValidationError("Book author cannot exceed 255 characters")
+    }
+  }
+}
