@@ -1,6 +1,6 @@
 import { CreateBookUseCase } from "../create-book.use-case"
-import { Book } from "../../domain/entities/book.entity"
-import type { BookRepositoryPort } from "../../domain/ports/book-repository.port"
+import { Book } from "../../../domain/entities/book.entity"
+import type { BookRepositoryPort } from "../../../domain/ports/book-repository.port"
 
 describe("CreateBookUseCase", () => {
   let useCase: CreateBookUseCase
