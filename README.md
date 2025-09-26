@@ -48,9 +48,12 @@ src/
 ## 📋 Prerequisites
 
 - Node.js 18+
+- pnpm (vía Corepack incluido con Node.js 18+)
 - PostgreSQL 15+
 - Docker & Docker Compose (optional)
 - Google Cloud SDK (for deployment)
+
+> 💡 Ejecuta `corepack enable` una vez en tu entorno para asegurarte de que pnpm esté disponible.
 
 ## 🚀 Quick Start
 
@@ -59,7 +62,8 @@ src/
 \`\`\`bash
 git clone <repository-url>
 cd library-management-system
-npm install
+corepack enable
+pnpm install
 \`\`\`
 
 ### 2. Database Setup
@@ -70,8 +74,8 @@ npm install
 docker-compose -f scripts/docker-compose.dev.yml up -d
 
 # Wait for database to be ready, then run migrations
-npm run prisma:migrate:dev
-npm run prisma:seed
+pnpm run prisma:migrate:dev
+pnpm run prisma:seed
 \`\`\`
 
 #### Option B: Local PostgreSQL
@@ -81,17 +85,21 @@ cp .env.example .env
 # Edit .env with your database credentials
 
 # Run migrations and seed
-npm run prisma:migrate:dev
-npm run prisma:seed
+pnpm run prisma:migrate:dev
+pnpm run prisma:seed
 \`\`\`
 
 ### 3. Start Development Server
 
 \`\`\`bash
-npm run dev
+pnpm run dev
 \`\`\`
 
 The API will be available at `http://localhost:3000`
+
+## 📦 Gestión de paquetes
+
+Este proyecto utiliza **pnpm** como gestor de paquetes oficial. El contenedor Docker y la configuración de Cloud Build instalan las dependencias con `corepack pnpm install --frozen-lockfile`, garantizando que el `pnpm-lock.yaml` sea la fuente de la resolución de versiones. Ejecuta cualquier script definido en `package.json` mediante `pnpm run <script>` para mantener la coherencia con el entorno de despliegue.
 
 ## 📚 API Endpoints
 
@@ -118,16 +126,16 @@ The API will be available at `http://localhost:3000`
 
 \`\`\`bash
 # Unit tests
-npm run test
+pnpm run test
 
 # E2E tests
-npm run test:e2e
+pnpm run test:e2e
 
 # Test coverage
-npm run test:cov
+pnpm run test:cov
 
 # Watch mode
-npm run test:watch
+pnpm run test:watch
 \`\`\`
 
 ## 🐳 Docker Deployment
@@ -172,19 +180,19 @@ PORT="8080"
 
 \`\`\`bash
 # Generate Prisma client
-npm run prisma:generate
+pnpm run prisma:generate
 
 # Create and apply migration
-npm run prisma:migrate:dev
+pnpm run prisma:migrate:dev
 
 # Deploy migrations to production
-npm run prisma:migrate:deploy
+pnpm run prisma:migrate:deploy
 
 # Seed database
-npm run prisma:seed
+pnpm run prisma:seed
 
 # Open Prisma Studio
-npm run prisma:studio
+pnpm run prisma:studio
 \`\`\`
 
 ## 📁 Project Structure
