@@ -6,6 +6,7 @@ import { CatalogModule } from "@/modules/catalog/catalog.module"
 import { MembersModule } from "@/modules/members/members.module"
 import { LoansModule } from "@/modules/loans/loans.module"
 import { HealthModule } from "./health/health.module"
+import { AuthModule } from "@/modules/auth/auth.module"
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { HealthModule } from "./health/health.module"
       },
     }),
     CoreModule,
+    AuthModule,
     CatalogModule,
     MembersModule,
     LoansModule,
