@@ -3,9 +3,9 @@ import { IsNumber, IsPositive } from "class-validator"
 export class CreateLoanDto {
   @IsNumber()
   @IsPositive()
-  bookId: number
+  bookId!: number
 
   @IsNumber()
   @IsPositive()
-  memberId: number
+  memberId!: number
 }
