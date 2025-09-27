@@ -11,6 +11,11 @@ import { Logger } from "nestjs-pino"
 import { GlobalExceptionFilter } from "@/core/filters/global-exception.filter"
 import { AppModule } from "./app.module"
 
+const CORS_ALLOWED_ORIGINS = [
+  "https://frontend-480236425407.us-central1.run.app",
+  "http://localhost:3000",
+]
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
@@ -110,7 +115,7 @@ async function bootstrap() {
 
   // CORS configuration
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
+    origin: CORS_ALLOWED_ORIGINS,
     credentials: true,
   })
 
