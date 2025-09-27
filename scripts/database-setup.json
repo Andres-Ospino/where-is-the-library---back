@@ -1,23 +1,8 @@
 {
-  "name": "Database Setup Scripts",
-  "description": "Collection of database setup and maintenance scripts",
+  "name": "PostgreSQL Setup",
+  "description": "Pasos sugeridos para preparar la base de datos de PostgreSQL utilizada por TypeORM.",
   "scripts": {
-    "setup": {
-      "description": "Set up development database with Docker",
-      "commands": [
-        "docker-compose -f scripts/docker-compose.dev.yml up -d",
-        "sleep 10",
-        "npm run prisma:migrate:dev",
-        "npm run prisma:seed"
-      ]
-    },
-    "reset": {
-      "description": "Reset database and reseed",
-      "commands": ["npm run prisma:migrate:reset --force", "npm run prisma:seed"]
-    },
-    "production-deploy": {
-      "description": "Deploy database migrations to production",
-      "commands": ["npm run prisma:generate", "npm run prisma:migrate:deploy"]
-    }
+    "docker": "docker compose -f docker-compose.dev.yml up -d postgres",
+    "init": "psql postgresql://library_user:library_password@localhost:5432/library_db -f scripts/init-database.sql"
   }
 }

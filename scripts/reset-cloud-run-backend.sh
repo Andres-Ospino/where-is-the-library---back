@@ -9,9 +9,8 @@ PIPELINE_SCRIPT=${PIPELINE_SCRIPT:-"scripts/deploy-cloud-run.sh"}
 HEALTH_URL=${HEALTH_URL:-""}
 ARTIFACT_REPOSITORY=${ARTIFACT_REPOSITORY:-"library-management-system"}
 IMAGE_TAG=${IMAGE_TAG:-$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M%S)}
-INSTANCE_NAME=${INSTANCE_NAME:-"library-db-instance"}
-DATABASE_URL=${DATABASE_URL:-""}
 JWT_SECRET=${JWT_SECRET:-""}
+DATABASE_URL=${DATABASE_URL:-""}
 
 usage() {
   cat <<USAGE
@@ -25,8 +24,6 @@ Variables de entorno disponibles:
   HEALTH_URL        URL opcional de la sonda de salud para validación manual
   ARTIFACT_REPOSITORY  Repositorio de Artifact Registry (por defecto: library-management-system)
   IMAGE_TAG            Tag de la imagen a desplegar (por defecto: hash corto de git o timestamp)
-  INSTANCE_NAME        Nombre de la instancia de Cloud SQL (por defecto: library-db-instance)
-  DATABASE_URL         Cadena de conexión usada por Cloud Run (obligatoria si no se usa PIPELINE_SCRIPT)
   JWT_SECRET           Secreto JWT usado por la aplicación (obligatorio si no se usa PIPELINE_SCRIPT)
 USAGE
 }
@@ -89,14 +86,18 @@ if [[ -x "${PIPELINE_SCRIPT}" ]]; then
   "${PIPELINE_SCRIPT}" "${PROJECT_ID}"
 else
   echo "ℹ️ Script ${PIPELINE_SCRIPT} no es ejecutable o no existe. Usando gcloud builds submit por defecto."
-  if [[ -z "${DATABASE_URL}" || -z "${JWT_SECRET}" || "${JWT_SECRET}" == "define-un-secreto-robusto" ]]; then
-    echo "❌ Debes proporcionar DATABASE_URL y JWT_SECRET válidos a través de variables de entorno para usar gcloud builds submit." >&2
+  if [[ -z "${JWT_SECRET}" || "${JWT_SECRET}" == "define-un-secreto-robusto" ]]; then
+    echo "❌ Debes proporcionar JWT_SECRET válido a través de variables de entorno para usar gcloud builds submit." >&2
+    exit 1
+  fi
+  if [[ -z "${DATABASE_URL}" ]]; then
+    echo "❌ Debes proporcionar DATABASE_URL válido a través de variables de entorno para usar gcloud builds submit." >&2
     exit 1
   fi
   gcloud builds submit \
     --config cloudbuild.yaml \
     --project "${PROJECT_ID}" \
-    --substitutions=_SERVICE_NAME="${SERVICE_NAME}",_REGION="${REGION}",_ARTIFACT_REPOSITORY="${ARTIFACT_REPOSITORY}",_IMAGE_TAG="${IMAGE_TAG}",_INSTANCE_NAME="${INSTANCE_NAME}",_DATABASE_URL="${DATABASE_URL}",_JWT_SECRET="${JWT_SECRET}" \
+    --substitutions=_SERVICE_NAME="${SERVICE_NAME}",_REGION="${REGION}",_ARTIFACT_REPOSITORY="${ARTIFACT_REPOSITORY}",_IMAGE_TAG="${IMAGE_TAG}",_JWT_SECRET="${JWT_SECRET}",_DATABASE_URL="${DATABASE_URL}" \
     --quiet
 fi
 

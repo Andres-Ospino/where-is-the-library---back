@@ -3,8 +3,8 @@ import { CreateBookUseCase } from "../../application/use-cases/create-book.use-c
 import { ListBooksUseCase } from "../../application/use-cases/list-books.use-case"
 import { UpdateBookUseCase } from "../../application/use-cases/update-book.use-case"
 import { RemoveBookUseCase } from "../../application/use-cases/remove-book.use-case"
-import type { CreateBookDto } from "@/modules/shared/dtos/create-book.dto"
-import type { UpdateBookDto } from "@/modules/shared/dtos/update-book.dto"
+import { CreateBookDto } from "@/modules/shared/dtos/create-book.dto"
+import { UpdateBookDto } from "@/modules/shared/dtos/update-book.dto"
 
 @Controller("books")
 export class BooksController {

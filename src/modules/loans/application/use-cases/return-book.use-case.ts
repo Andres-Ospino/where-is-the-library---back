@@ -7,7 +7,6 @@ import { type EventBusPort, EVENT_BUS_TOKEN } from "@/modules/shared/ports/event
 import { NotFoundError } from "@/modules/shared/errors/not-found.error"
 import { ConflictError } from "@/modules/shared/errors/conflict.error"
 import { LoanReturnedEvent } from "../../domain/events/loan-returned.event"
-import { PrismaService } from "@/core/database/prisma.service"
 
 export interface ReturnBookCommand {
   loanId: number
@@ -24,7 +23,6 @@ export class ReturnBookUseCase {
     private readonly dateProvider: DateProviderPort,
     @Inject(EVENT_BUS_TOKEN)
     private readonly eventBus: EventBusPort,
-    private readonly prisma: PrismaService,
   ) {}
 
   async execute(command: ReturnBookCommand): Promise<Loan> {
@@ -45,22 +43,19 @@ export class ReturnBookUseCase {
       throw new NotFoundError("Book", loan.bookId)
     }
 
-    // Execute transaction: return loan and mark book as available
-    return await this.prisma.$transaction(async (tx) => {
-      // Return loan
-      const returnDate = this.dateProvider.now()
-      loan.returnBook(returnDate)
-      const updatedLoan = await this.loanRepository.update(loan)
+    // Return loan
+    const returnDate = this.dateProvider.now()
+    loan.returnBook(returnDate)
+    const updatedLoan = await this.loanRepository.update(loan)
 
-      // Mark book as available
-      book.markAsAvailable()
-      await this.bookRepository.update(book)
+    // Mark book as available
+    book.markAsAvailable()
+    await this.bookRepository.update(book)
 
-      // Publish domain event
-      const event = new LoanReturnedEvent(command.loanId, loan.bookId, loan.memberId, returnDate)
-      await this.eventBus.publish(event)
+    // Publish domain event
+    const event = new LoanReturnedEvent(command.loanId, loan.bookId, loan.memberId, returnDate)
+    await this.eventBus.publish(event)
 
-      return updatedLoan
-    })
+    return updatedLoan
   }
 }

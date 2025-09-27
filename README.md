@@ -1,330 +1,196 @@
 # Library Management System
 
-A comprehensive library management system built with NestJS, TypeScript, Prisma, and PostgreSQL, implementing Clean Architecture and SOLID principles.
+Una plataforma completa para la gestión de bibliotecas construida con NestJS y TypeScript. La aplicación sigue principios de Arquitectura Limpia/Hexagonal y ahora utiliza **TypeORM con PostgreSQL** como capa de persistencia, lo que permite integrarse con instancias de Google Cloud SQL sin sacrificar la separación por capas.
 
-## 🏗️ Architecture
+## 🏗️ Arquitectura
 
-This project follows Clean Architecture (Hexagonal Architecture) with clear separation of concerns:
+El proyecto mantiene los límites de capas definidos en la arquitectura hexagonal:
 
-\`\`\`
+```
 src/
-├─ core/                    # Cross-cutting concerns
-│  ├─ database/            # Prisma configuration
-│  ├─ providers/           # Date provider, Event bus
-│  └─ filters/             # Global exception filter
+├─ core/                    # Capacidades transversales
+│  ├─ database/            # Configuración TypeORM + proveedores
+│  ├─ providers/           # Date provider & event bus
+│  └─ filters/             # Filtros globales
 ├─ modules/
-│  ├─ catalog/             # Books management
-│  │  ├─ domain/           # Entities + Ports (interfaces)
-│  │  ├─ application/      # Use cases
-│  │  └─ infrastructure/   # Controllers + Repositories
-│  ├─ members/             # Members management
-│  └─ loans/               # Loans management
-└─ shared/                 # DTOs, errors, utilities
-\`\`\`
+│  ├─ catalog/             # Gestión de libros
+│  │  ├─ domain/           # Entidades + puertos (interfaces)
+│  │  ├─ application/      # Casos de uso
+│  │  └─ infrastructure/   # Controladores + repositorios TypeORM
+│  ├─ members/             # Gestión de miembros
+│  └─ loans/               # Gestión de préstamos
+└─ shared/                 # DTOs, errores, utilidades comunes
+```
 
-## 🚀 Features
+## 🚀 Características
 
-- **Books Management**: Create, read, update, delete books
-- **Members Management**: Register and manage library members
-- **Loans System**: Loan books to members with return tracking
-- **Clean Architecture**: Domain-driven design with dependency inversion
-- **Database Transactions**: Atomic operations for loan/return processes
-- **Domain Events**: Event-driven architecture for business events
-- **Comprehensive Testing**: Unit and integration tests
-- **Docker Support**: Containerized deployment
-- **Cloud Ready**: Google Cloud Run deployment configuration
+- **Gestión de libros**: crear, listar, actualizar y eliminar libros.
+- **Gestión de miembros**: registrar y consultar miembros.
+- **Sistema de préstamos**: préstamo y devolución de libros con seguimiento del estado.
+- **Persistencia con TypeORM**: repositorios adaptados a PostgreSQL/Cloud SQL.
+- **Arquitectura limpia**: dominio aislado mediante puertos y adaptadores.
+- **Eventos de dominio**: publicación a través de un bus de eventos in-process.
+- **Pruebas E2E**: verificaciones automatizadas de los flujos principales con base de datos efímera (SQLite en modo test).
+- **Soporte Docker y Cloud Run**: contenedores listos para despliegue gestionado en Google Cloud.
 
-## 🛠️ Tech Stack
+## 🛠️ Stack Tecnológico
 
-- **Framework**: NestJS with TypeScript (strict mode)
-- **Database**: PostgreSQL with Prisma ORM
-- **Architecture**: Clean Architecture / Hexagonal Architecture
-- **Testing**: Jest (unit + e2e tests)
-- **Containerization**: Docker & Docker Compose
-- **Cloud**: Google Cloud Run + Cloud SQL
-- **CI/CD**: GitHub Actions
-- **Code Quality**: ESLint + Prettier
+- **Framework**: NestJS (TypeScript, modo estricto).
+- **Persistencia**: TypeORM + PostgreSQL (compatible con Google Cloud SQL).
+- **Pruebas**: Jest (unitarias y end-to-end).
+- **Infraestructura**: Docker, Docker Compose, Google Cloud Run, Cloud SQL.
+- **Observabilidad**: `nestjs-pino` para logging estructurado.
+- **Gestión de paquetes**: pnpm.
 
-## 📋 Prerequisites
+## 📋 Prerrequisitos
 
 - Node.js 18+
-- pnpm (vía Corepack incluido con Node.js 18+)
-- PostgreSQL 15+
-- Docker & Docker Compose (optional)
-- Google Cloud SDK (for deployment)
+- pnpm (via Corepack incluido con Node.js 18+)
+- PostgreSQL 15+ (local o gestionado)
+- Docker & Docker Compose (opcional para desarrollo local)
+- Google Cloud SDK (para despliegues en Cloud Run)
 
-> 💡 Ejecuta `corepack enable` una vez en tu entorno para asegurarte de que pnpm esté disponible.
+> 💡 Ejecuta `corepack enable` una sola vez en tu entorno para garantizar que pnpm esté disponible.
 
-## 🚀 Quick Start
+## 🚀 Puesta en marcha rápida
 
-### 1. Clone and Install
+### 1. Clonar e instalar dependencias
 
-\`\`\`bash
+```bash
 git clone <repository-url>
 cd library-management-system
 corepack enable
 pnpm install
-\`\`\`
+```
 
-### 2. Database Setup
+### 2. Configurar la base de datos
 
-#### Option A: Using Docker (Recommended)
-\`\`\`bash
-# Start PostgreSQL with Docker Compose
-docker-compose -f scripts/docker-compose.dev.yml up -d
+#### Opción A: Docker Compose (recomendado)
 
-# Wait for database to be ready, then run migrations
-pnpm run prisma:migrate:dev
-pnpm run prisma:seed
-\`\`\`
+```bash
+docker compose -f docker-compose.dev.yml up -d postgres
+# Espera a que PostgreSQL supere el healthcheck y luego crea el esquema
+psql postgresql://library_user:library_password@localhost:5432/library_db -f scripts/init-database.sql
+```
 
-#### Option B: Local PostgreSQL
-\`\`\`bash
-# Configure your DATABASE_URL in .env
-cp .env.example .env
-# Edit .env with your database credentials
+#### Opción B: PostgreSQL local o Cloud SQL
 
-# Run migrations and seed
-pnpm run prisma:migrate:dev
-pnpm run prisma:seed
-\`\`\`
+1. Crea la base de datos y usuario de la aplicación.
+2. Ejecuta `scripts/init-database.sql` para generar tablas e índices.
+3. Construye la cadena `DATABASE_URL`, por ejemplo:
+   ```
+   postgresql://library_user:S3cret@localhost:5432/library_db
+   ```
+   Para Cloud SQL con conexión por socket:
+   ```
+   postgresql://library_user:S3cret@/library_db?host=/cloudsql/<PROJECT_ID>:<REGION>:<INSTANCE_NAME>
+   ```
 
-### 3. Start Development Server
+### 3. Variables de entorno
 
-\`\`\`bash
+Crea un archivo `.env` basado en `.env.example` o exporta las variables necesarias:
+
+```env
+NODE_ENV=development
+PORT=3000
+DATABASE_URL=postgresql://library_user:library_password@localhost:5432/library_db
+TYPEORM_LOGGING=false
+JWT_SECRET=dev-secret
+ALLOWED_ORIGINS=http://localhost:3000
+```
+
+El flag `TYPEORM_LOGGING` acepta `true`/`false` y habilita los logs de consultas, útil durante el desarrollo cuando necesitas
+inspeccionar las operaciones SQL generadas por el ORM.
+
+Para pruebas automáticas puedes usar `.env.test`, que se carga desde `test/setup.ts`.
+
+### 4. Levantar el servidor en modo desarrollo
+
+```bash
 pnpm run dev
-\`\`\`
+```
 
-The API will be available at `http://localhost:3000`
+La API quedará disponible en `http://localhost:3000`.
 
-## 📦 Gestión de paquetes
+## 📚 Endpoints principales
 
-Este proyecto utiliza **pnpm** como gestor de paquetes oficial. El contenedor Docker y la configuración de Cloud Build instalan las dependencias con `corepack pnpm install --frozen-lockfile`, garantizando que el `pnpm-lock.yaml` sea la fuente de la resolución de versiones. Ejecuta cualquier script definido en `package.json` mediante `pnpm run <script>` para mantener la coherencia con el entorno de despliegue.
+- `GET /books` – Lista libros, admite filtros `title` y `author`.
+- `POST /books` – Crea un libro.
+- `GET /books/:id` – Recupera un libro.
+- `PATCH /books/:id` – Actualiza título/autor.
+- `DELETE /books/:id` – Elimina un libro (validando préstamos activos).
+- `GET /members` / `POST /members` – Gestión de miembros.
+- `GET /loans` – Consulta préstamos (`activeOnly`, `memberId`, `bookId`).
+- `POST /loans` – Registra un nuevo préstamo.
+- `POST /loans/:id/return` – Marca devolución.
+- `GET /health` – Sonda de salud.
 
-## 📚 API Endpoints
+## 🧪 Pruebas
 
-### Books
-- `GET /books` - List all books (with optional title/author filters)
-- `POST /books` - Create a new book
-- `GET /books/:id` - Get book by ID
-- `PATCH /books/:id` - Update book
-- `DELETE /books/:id` - Delete book
-
-### Members
-- `GET /members` - List all members
-- `POST /members` - Create a new member
-
-### Loans
-- `GET /loans` - List loans (with optional filters)
-- `POST /loans` - Create a new loan
-- `POST /loans/:id/return` - Return a book
-
-### Health Check
-- `GET /health` - Application health status
-
-## 🧪 Testing
-
-\`\`\`bash
-# Unit tests
+```bash
+# Pruebas unitarias
 pnpm run test
 
-# E2E tests
+# Pruebas end-to-end (usa SQLite en memoria)
 pnpm run test:e2e
 
-# Test coverage
+# Cobertura
 pnpm run test:cov
-
-# Watch mode
-pnpm run test:watch
-\`\`\`
-
-## 🐳 Docker Deployment
-
-### Development
-\`\`\`bash
-docker-compose -f docker-compose.dev.yml up -d
-\`\`\`
-
-### Production
-\`\`\`bash
-docker-compose up -d
-\`\`\`
-
-## ☁️ Google Cloud Deployment
-
-Esta guía unificada describe los pasos necesarios para desplegar la API en Google Cloud Run usando Cloud SQL y Artifact Registry. Puedes automatizar varias tareas con los scripts `scripts/setup-gcp.sh` y `scripts/deploy-cloud-run.sh`, pero aquí se detalla todo el proceso para que puedas verificar cada punto.
-
-> 📄 Copia el archivo `.env.gcloud` incluido en el repositorio y actualiza sus valores antes de ejecutar los comandos:
-> ```bash
-> cp .env.gcloud .env.gcloud.local
-> # Edita .env.gcloud.local para establecer PROJECT_ID, DATABASE_URL, JWT_SECRET, etc.
-> source .env.gcloud.local
-> ```
-
-### 1. Preparar la configuración del proyecto y Artifact Registry
-```bash
-# Define el proyecto y la región por defecto
-gcloud config set project "$PROJECT_ID"
-gcloud config set run/region us-central1
-
-# Habilita la autenticación de Artifact Registry en la región
-gcloud auth configure-docker us-central1-docker.pkg.dev
-
-# Crea (una sola vez) el repositorio Docker en Artifact Registry
-gcloud artifacts repositories create library-management-system   --repository-format=docker   --location=us-central1   --description="Library Management System images"   --project "$PROJECT_ID"
 ```
 
-> ℹ️ El repositorio y la imagen utilizados en toda la guía son `us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system`.
+## 🐳 Docker
 
-### 2. Aprovisionar Cloud SQL (PostgreSQL)
-```bash
-# Activa las APIs necesarias
-gcloud services enable run.googleapis.com cloudbuild.googleapis.com   artifactregistry.googleapis.com sqladmin.googleapis.com   --project "$PROJECT_ID"
-
-# Crea la instancia de Cloud SQL (edición ENTERPRISE obligatoria para el tier utilizado)
-gcloud sql instances create library-db-instance   --database-version=POSTGRES_15   --edition=ENTERPRISE   --tier=db-custom-1-3840   --storage-size=10   --region=us-central1   --project "$PROJECT_ID"
-```
-
-### 3. Crear base de datos y usuario de aplicación
-```bash
-# Base de datos de la aplicación
-gcloud sql databases create library_db   --instance=library-db-instance   --project "$PROJECT_ID"
-
-# Usuario dedicado con contraseña generada
-DB_PASSWORD=$(openssl rand -base64 32)
-gcloud sql users create library_user   --instance=library-db-instance   --password="$DB_PASSWORD"   --project "$PROJECT_ID"
-
-echo "DATABASE_URL=postgresql://library_user:$DB_PASSWORD@/library_db?host=/cloudsql/$PROJECT_ID:us-central1:library-db-instance"
-```
-
-Actualiza tu `.env.gcloud.local` con la `DATABASE_URL` mostrada y un valor seguro para `JWT_SECRET`.
-
-### 4. Construir la imagen con Cloud Build
-```bash
-gcloud builds submit   --config cloudbuild.yaml   --project "$PROJECT_ID"   --substitutions=_DATABASE_URL="$DATABASE_URL",_JWT_SECRET="$JWT_SECRET"
-```
-
-El pipeline usa `corepack pnpm` (igual que el Dockerfile) y publica la imagen en Artifact Registry antes de desplegarla.
-
-### 5. Desplegar en Cloud Run con Cloud SQL adjunto
-```bash
-gcloud run deploy library-management-system   --image us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system:latest   --region us-central1   --allow-unauthenticated   --add-cloudsql-instances $PROJECT_ID:us-central1:library-db-instance   --set-env-vars DATABASE_URL="$DATABASE_URL",JWT_SECRET="$JWT_SECRET",NODE_ENV=production,PORT=8080   --project "$PROJECT_ID"
-```
-
-### 6. Ejecutar migraciones y seed con un Cloud Run Job
-```bash
-# Crear el job la primera vez
-gcloud run jobs create library-management-system-db-setup   --image us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system:latest   --region us-central1   --add-cloudsql-instances $PROJECT_ID:us-central1:library-db-instance   --set-env-vars DATABASE_URL="$DATABASE_URL",JWT_SECRET="$JWT_SECRET",NODE_ENV=production   --command sh   --args -c   --args "pnpm prisma migrate deploy && pnpm prisma seed"   --project "$PROJECT_ID"
-
-# Para actualizarlo tras cambios en la imagen
-gcloud run jobs update library-management-system-db-setup   --image us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system:latest   --region us-central1   --add-cloudsql-instances $PROJECT_ID:us-central1:library-db-instance   --set-env-vars DATABASE_URL="$DATABASE_URL",JWT_SECRET="$JWT_SECRET",NODE_ENV=production   --command sh   --args -c   --args "pnpm prisma migrate deploy && pnpm prisma seed"   --project "$PROJECT_ID"
-
-# Ejecuta el job tras desplegar cambios de base de datos
-gcloud run jobs execute library-management-system-db-setup   --region us-central1   --project "$PROJECT_ID"
-```
-> ✅ Los scripts de `scripts/setup-gcp.sh` y `scripts/deploy-cloud-run.sh` siguen estos mismos pasos y parámetros. Úsalos cuando quieras automatizar el proceso completo.
-
-### 7. Restaurar el comando por defecto y validar la salud del servicio
-
-Cuando Cloud Run conserva un comando personalizado (`ENTRYPOINT`) diferente al definido en el Dockerfile, el contenedor puede iniciar con parámetros incorrectos. El script `scripts/reset-cloud-run-backend.sh` ejecuta el flujo completo para limpiar el comando sobrescrito, desplegar la última imagen y validar la salud del servicio en un solo paso.
+### Desarrollo
 
 ```bash
-# Limpia overrides, redeploya con el pipeline existente y ejecuta la sonda /health
-scripts/reset-cloud-run-backend.sh \
-  --project where-is-the-library \
-  --region us-central1 \
-  --service backend
-
-# Si necesitas una URL distinta para la sonda, añade --health-url "https://<url-personalizada>/health"
+docker compose -f docker-compose.dev.yml up -d
 ```
+Esto levanta PostgreSQL y permite trabajar con `pnpm run dev` en tu máquina.
 
-El script realiza las siguientes acciones:
+### Producción local
 
-1. Confirma que el servicio exista antes de modificarlo.
-2. Ejecuta `gcloud run services update --clear-command --clear-args` para eliminar cualquier override manual.
-3. Vuelve a desplegar utilizando `scripts/deploy-cloud-run.sh` (o `gcloud builds submit` si el script no está disponible).
-4. Comprueba que la revisión activa muestre el campo **Comando** vacío en la configuración del contenedor.
-5. Obtiene la URL pública del servicio y lanza `curl .../health` para asegurarse de que NestJS responde escuchando en el puerto 8080.
-## 🔧 Database Management
+```bash
+docker compose up -d
+```
+El contenedor de la aplicación se construye con la imagen del Dockerfile y se conecta al servicio PostgreSQL definido en el mismo archivo.
 
-\`\`\`bash
-# Generate Prisma client
-pnpm run prisma:generate
+## ☁️ Despliegue en Google Cloud Run + Cloud SQL
 
-# Create and apply migration
-pnpm run prisma:migrate:dev
+1. Copia `.env.gcloud` a `.env.gcloud.local` y completa `PROJECT_ID`, `INSTANCE_NAME`, `DATABASE_URL`, `JWT_SECRET`.
+2. Ejecuta `scripts/setup-gcp.sh` para habilitar APIs y crear el repositorio de Artifact Registry.
+3. Construye y despliega con `scripts/deploy-cloud-run.sh <PROJECT_ID>`. El script:
+   - Construye la imagen con Cloud Build.
+   - Publica en Artifact Registry.
+   - Despliega en Cloud Run configurando `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production` y `PORT=8080`.
+4. Asegúrate de que la instancia de Cloud SQL permita conexiones desde Cloud Run (por socket o por VPC). El valor de `DATABASE_URL` debe incluir `?host=/cloudsql/…` si usas sockets Unix.
 
-# Deploy migrations to production
-pnpm run prisma:migrate:deploy
+Para reinicios controlados puedes usar `scripts/reset-cloud-run-backend.sh`, que limpia overrides de comando y vuelve a desplegar.
 
-# Seed database
-pnpm run prisma:seed
+## 📁 Estructura del proyecto
 
-# Open Prisma Studio
-pnpm run prisma:studio
-\`\`\`
-
-## 📁 Project Structure
-
-\`\`\`
+```
 ├── src/
-│   ├── core/                 # Core infrastructure
-│   ├── modules/              # Business modules
-│   │   ├── catalog/          # Books domain
-│   │   ├── members/          # Members domain
-│   │   └── loans/            # Loans domain
-│   ├── shared/               # Shared utilities
-│   └── health/               # Health check
-├── prisma/                   # Database schema & migrations
-├── test/                     # E2E tests
-├── scripts/                  # Deployment scripts
-└── docker-compose*.yml       # Docker configurations
-\`\`\`
+│   ├── core/                 # Infraestructura compartida
+│   ├── modules/              # Módulos de dominio
+│   ├── shared/               # Utilidades
+│   └── health/               # Endpoint de salud
+├── test/                     # Pruebas unitarias y E2E
+├── scripts/                  # Scripts de despliegue y base de datos
+├── docker-compose*.yml       # Configuración Docker
+└── README.md
+```
 
-## 🏛️ Clean Architecture Principles
+## 🔒 Seguridad
 
-1. **Domain Layer**: Pure business logic, no external dependencies
-2. **Application Layer**: Use cases orchestrating domain objects
-3. **Infrastructure Layer**: External concerns (database, HTTP, etc.)
-4. **Dependency Inversion**: High-level modules don't depend on low-level modules
+- Validaciones con `class-validator`/`class-transformer`.
+- Manejo centralizado de excepciones con mapeo de errores de TypeORM.
+- JWT (módulo base listo para integración futura).
+- CORS configurable.
 
-## 🔒 Security Features
+## 🤝 Contribuciones
 
-- Input validation with class-validator
-- Global exception handling
-- CORS configuration
-- JWT authentication (skeleton for future implementation)
-- Database connection security
-- Docker security best practices
-
-## 📈 Performance Optimizations
-
-- Database indexes on frequently queried fields
-- Connection pooling with Prisma
-- Multi-stage Docker builds
-- Efficient query patterns
-- Proper error handling and logging
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For issues and questions:
-1. Check the existing issues
-2. Create a new issue with detailed description
-3. Include steps to reproduce for bugs
-
----
-
-Built with ❤️ using NestJS and Clean Architecture principles.
+1. Crea un branch de característica.
+2. Implementa los cambios manteniendo los principios de arquitectura limpia.
+3. Añade pruebas cuando corresponda.
+4. Ejecuta el pipeline de pruebas (`pnpm run test` / `pnpm run test:e2e`).
+5. Envía tu Pull Request.

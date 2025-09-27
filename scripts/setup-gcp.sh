@@ -24,20 +24,7 @@ fi
 REGION=${REGION:-"us-central1"}
 SERVICE_NAME=${SERVICE_NAME:-"library-management-system"}
 ARTIFACT_REPOSITORY=${ARTIFACT_REPOSITORY:-"library-management-system"}
-DB_INSTANCE_NAME=${INSTANCE_NAME:-"library-db-instance"}
-DB_NAME=${DB_NAME:-"library_db"}
-DB_USER=${DB_USER:-"library_user"}
-SQL_EDITION=${SQL_EDITION:-"ENTERPRISE"}
-SQL_TIER=${SQL_TIER:-"db-custom-1-3840"}
-STORAGE_SIZE=${STORAGE_SIZE:-"10"}
-
-if [[ "${SQL_EDITION}" != "ENTERPRISE" ]]; then
-  echo "❌ Esta guía utiliza Cloud SQL ENTERPRISE edition para garantizar compatibilidad con el tier ${SQL_TIER}."
-  exit 1
-fi
-
 ARTIFACT_REPO_PATH="${REGION}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REPOSITORY}/${SERVICE_NAME}"
-INSTANCE_CONNECTION_NAME="${PROJECT_ID}:${REGION}:${DB_INSTANCE_NAME}"
 
 export CLOUDSDK_CORE_PROJECT="${PROJECT_ID}"
 
@@ -49,7 +36,7 @@ gcloud config set project "${PROJECT_ID}" >/dev/null
 
 echo "📡 Habilitando APIs requeridas..."
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
-  artifactregistry.googleapis.com sqladmin.googleapis.com \
+  artifactregistry.googleapis.com \
   --project "${PROJECT_ID}"
 
 echo "🏷️ Configurando Artifact Registry (${ARTIFACT_REPO_PATH})"
@@ -65,61 +52,15 @@ else
     --project "${PROJECT_ID}"
 fi
 
-echo "🗄️ Creando instancia de Cloud SQL (${DB_INSTANCE_NAME})..."
-if gcloud sql instances describe "${DB_INSTANCE_NAME}" \
-  --project "${PROJECT_ID}" >/dev/null 2>&1; then
-  echo "ℹ️ La instancia ya existe, se reutilizará."
-else
-  gcloud sql instances create "${DB_INSTANCE_NAME}" \
-    --database-version=POSTGRES_15 \
-    --edition="${SQL_EDITION}" \
-    --tier="${SQL_TIER}" \
-    --storage-size="${STORAGE_SIZE}" \
-    --region="${REGION}" \
-    --project "${PROJECT_ID}"
+JWT_SECRET=${JWT_SECRET:-""}
+if [[ "${JWT_SECRET}" == "define-un-secreto-robusto" || -z "${JWT_SECRET}" ]]; then
+  echo "⚠️ Recuerda definir JWT_SECRET en .env.gcloud.local antes del despliegue."
 fi
 
-echo "📊 Verificando base de datos (${DB_NAME})..."
-if gcloud sql databases describe "${DB_NAME}" \
-  --instance="${DB_INSTANCE_NAME}" \
-  --project "${PROJECT_ID}" >/dev/null 2>&1; then
-  echo "ℹ️ La base de datos ya existe."
-else
-  gcloud sql databases create "${DB_NAME}" \
-    --instance="${DB_INSTANCE_NAME}" \
-    --project "${PROJECT_ID}"
-fi
-
-echo "👤 Configurando usuario (${DB_USER})..."
-DB_PASSWORD=${DB_PASSWORD:-""}
-if [[ -z "${DB_PASSWORD}" ]]; then
-  DB_PASSWORD=$(openssl rand -base64 32)
-fi
-if gcloud sql users list \
-  --instance="${DB_INSTANCE_NAME}" \
-  --project "${PROJECT_ID}" | grep -q "${DB_USER}"; then
-  gcloud sql users set-password "${DB_USER}" \
-    --instance="${DB_INSTANCE_NAME}" \
-    --password="${DB_PASSWORD}" \
-    --project "${PROJECT_ID}"
-else
-  gcloud sql users create "${DB_USER}" \
-    --instance="${DB_INSTANCE_NAME}" \
-    --password="${DB_PASSWORD}" \
-    --project "${PROJECT_ID}"
+if [[ -z "${DATABASE_URL:-}" || "${DATABASE_URL}" == *"REEMPLAZA_CONTRASENA"* ]]; then
+  echo "⚠️ Define DATABASE_URL con las credenciales reales de tu instancia de Cloud SQL antes de desplegar."
 fi
 
 echo "✅ Recursos configurados correctamente"
-
-echo "🔗 Conexión Cloud SQL: ${INSTANCE_CONNECTION_NAME}"
 echo "📦 Repositorio de imagen: ${ARTIFACT_REPO_PATH}"
-echo "📝 Credenciales de base de datos:"
-echo "  - Usuario: ${DB_USER}"
-echo "  - Base de datos: ${DB_NAME}"
-echo "  - Contraseña generada: ${DB_PASSWORD}"
-echo
-echo "📌 Actualiza tu archivo .env.gcloud.local con los valores anteriores y un JWT_SECRET seguro."
-cat <<EOF
-DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@/${DB_NAME}?host=/cloudsql/${INSTANCE_CONNECTION_NAME}
-JWT_SECRET=<<define-un-valor-seguro>>
-EOF
+echo "🔑 JWT_SECRET actual: ${JWT_SECRET:-"<no definido>"}"
