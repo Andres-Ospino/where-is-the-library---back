@@ -5,19 +5,23 @@ import { BookOrmEntity } from "@/modules/catalog/infrastructure/persistence/type
 import { MemberOrmEntity } from "@/modules/members/infrastructure/persistence/typeorm/member.orm-entity"
 import { LoanOrmEntity } from "@/modules/loans/infrastructure/persistence/typeorm/loan.orm-entity"
 import { AuthAccountOrmEntity } from "@/modules/auth-accounts/infrastructure/persistence/typeorm/auth-account.orm-entity"
+import { CreateAuthAccountsTable1717094400000 } from "./migrations/1717094400000-create-auth-accounts-table"
 import { cloudSqlDefaults } from "@/config/cloudsql.config"
 
 function buildTypeOrmOptions(configService: ConfigService): TypeOrmModuleOptions {
   const nodeEnv = configService.get<string>("NODE_ENV")
   const entities = [BookOrmEntity, MemberOrmEntity, LoanOrmEntity, AuthAccountOrmEntity]
+  const migrations = [CreateAuthAccountsTable1717094400000]
 
   if (nodeEnv === "test") {
     return {
       type: "sqlite",
       database: ":memory:",
       entities,
+      migrations,
       synchronize: true,
       dropSchema: true,
+      migrationsRun: false,
     }
   }
 
@@ -31,12 +35,15 @@ function buildTypeOrmOptions(configService: ConfigService): TypeOrmModuleOptions
   const cloudSqlHost = searchParams?.get("host") ?? undefined
   const sslMode = searchParams?.get("sslmode") ?? configService.get<string>("DB_SSLMODE") ?? undefined
 
+  const shouldRunMigrations = nodeEnv !== "test"
+
   const options: TypeOrmModuleOptions = {
     type: "postgres",
     url: databaseUrl,
     entities,
+    migrations,
     synchronize: false,
-    migrationsRun: false,
+    migrationsRun: shouldRunMigrations,
     autoLoadEntities: false,
     logging: configService.get<string>("TYPEORM_LOGGING", "false").toLowerCase() === "true",
   }
