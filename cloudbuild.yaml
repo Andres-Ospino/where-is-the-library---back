@@ -42,6 +42,7 @@ steps:
         if [[ -z "${DATABASE_URL}" || -z "${JWT_SECRET}" ]]; then
           echo "DATABASE_URL y JWT_SECRET son obligatorios. Gestiona los secretos en Secret Manager."
           exit 1
+        fi
 
   # 🔧 Limpieza de command/args obsoletos en Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
