@@ -43,15 +43,20 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       return
     }
 
-    try {
-      await this.$connect()
-      this.logger.log("Conexión inicial a la base de datos establecida correctamente")
-    } catch (error) {
-      this.logger.error(
-        "No se pudo establecer la conexión inicial a la base de datos. Las operaciones seguirán fallando hasta que la conexión se restablezca.",
-        error instanceof Error ? error.stack : undefined,
-      )
-    }
+    this.logger.warn(
+      "Iniciando la conexión a la base de datos en background. La aplicación continuará levantando sin esperar a que se complete el intento inicial.",
+    )
+
+    void this.$connect()
+      .then(() => {
+        this.logger.log("Conexión inicial a la base de datos establecida correctamente")
+      })
+      .catch((error) => {
+        this.logger.error(
+          "No se pudo establecer la conexión inicial a la base de datos. Las operaciones seguirán fallando hasta que la conexión se restablezca.",
+          error instanceof Error ? error.stack : undefined,
+        )
+      })
   }
 
   async onModuleDestroy() {
