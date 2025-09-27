@@ -21,6 +21,7 @@ describe("LoanBookUseCase", () => {
   let mockDateProvider: jest.Mocked<DateProviderPort>
   let mockEventBus: jest.Mocked<EventBusPort>
   let mockPrisma: jest.Mocked<PrismaTransactionMock>
+  let prismaServiceMock: PrismaService
 
   beforeEach(() => {
     mockLoanRepository = {
@@ -66,13 +67,15 @@ describe("LoanBookUseCase", () => {
       $transaction: jest.fn(),
     } as jest.Mocked<PrismaTransactionMock>
 
+    prismaServiceMock = mockPrisma as unknown as PrismaService
+
     useCase = new LoanBookUseCase(
       mockLoanRepository,
       mockBookRepository,
       mockMemberRepository,
       mockDateProvider,
       mockEventBus,
-      mockPrisma as PrismaService,
+      prismaServiceMock,
     )
   })
 
@@ -90,7 +93,7 @@ describe("LoanBookUseCase", () => {
     mockDateProvider.now.mockReturnValue(loanDate)
     mockLoanRepository.save.mockResolvedValue(loan)
     mockPrisma.$transaction.mockImplementation(async (callback: any) => {
-      return await callback(mockPrisma as PrismaService)
+      return await callback(prismaServiceMock)
     })
 
     // Act
