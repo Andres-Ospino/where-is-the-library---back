@@ -47,11 +47,13 @@ async function bootstrap() {
     .setTitle("Library Management API")
     .setDescription("API documentation for the library management system")
     .setVersion("1.0.0")
+    .addServer("http://localhost:8080", "Desarrollo local")
     .addBearerAuth({
       type: "http",
       scheme: "bearer",
       bearerFormat: "JWT",
     })
+    .setExternalDoc("Colección Postman", "/postman-collection")
     .build()
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig)
 
