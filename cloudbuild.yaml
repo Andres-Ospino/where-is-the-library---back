@@ -55,7 +55,8 @@ steps:
           --region '${_REGION}' \
           --allow-unauthenticated \
           --platform managed \
-          --set-env-vars "NODE_ENV=production,PORT=8080,JWT_SECRET=${_JWT_SECRET},DATABASE_URL=${_DATABASE_URL}" \
+          --add-cloudsql-instances '${_CLOUDSQL_CONNECTION}' \
+          --set-env-vars "NODE_ENV=production,PORT=8080,JWT_SECRET=${_JWT_SECRET},DATABASE_URL=${_DATABASE_URL},INSTANCE_CONNECTION_NAME=${_CLOUDSQL_CONNECTION}" \
           --project '$PROJECT_ID'
 
 images:
@@ -68,7 +69,8 @@ substitutions:
   _ARTIFACT_REPOSITORY: library-management-system
   _IMAGE_TAG: latest
   _JWT_SECRET: ''
-  _DATABASE_URL: ''
+  _DATABASE_URL: 'postgresql://library_user:_a1Dk4WYkKl_YRBlPrwemtTfL8yGaZXfWNIxb50-nag@/library_db?host=/cloudsql/where-is-the-library:us-central1:biblioteca-sql'
+  _CLOUDSQL_CONNECTION: 'where-is-the-library:us-central1:biblioteca-sql'
 
 options:
   logging: CLOUD_LOGGING_ONLY
