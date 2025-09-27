@@ -15,7 +15,10 @@ RUN pnpm install --frozen-lockfile
 # Install only production dependencies for the runtime image
 FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --prod
+COPY prisma ./prisma
+RUN pnpm install --frozen-lockfile \
+  && pnpm prisma generate \
+  && pnpm prune --prod
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -41,7 +44,7 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/dist ./dist
 COPY --from=prod-deps /app/node_modules ./node_modules
 RUN mkdir -p node_modules/.prisma
-COPY --from=builder /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
+COPY --from=prod-deps /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 
