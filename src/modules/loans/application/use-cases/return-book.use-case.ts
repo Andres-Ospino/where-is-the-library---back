@@ -7,7 +7,7 @@ import { type EventBusPort, EVENT_BUS_TOKEN } from "@/modules/shared/ports/event
 import { NotFoundError } from "@/modules/shared/errors/not-found.error"
 import { ConflictError } from "@/modules/shared/errors/conflict.error"
 import { LoanReturnedEvent } from "../../domain/events/loan-returned.event"
-import type { PrismaService } from "@/core/database/prisma.service"
+import { PrismaService } from "@/core/database/prisma.service"
 
 export interface ReturnBookCommand {
   loanId: number

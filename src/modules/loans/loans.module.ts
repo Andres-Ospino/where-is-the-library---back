@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common"
+import { Module, forwardRef } from "@nestjs/common"
 import { LoansController } from "./infrastructure/controllers/loans.controller"
 import { LoanBookUseCase } from "./application/use-cases/loan-book.use-case"
 import { ReturnBookUseCase } from "./application/use-cases/return-book.use-case"
@@ -9,7 +9,7 @@ import { CatalogModule } from "../catalog/catalog.module"
 import { MembersModule } from "../members/members.module"
 
 @Module({
-  imports: [CatalogModule, MembersModule],
+  imports: [forwardRef(() => CatalogModule), MembersModule],
   controllers: [LoansController],
   providers: [
     LoanBookUseCase,

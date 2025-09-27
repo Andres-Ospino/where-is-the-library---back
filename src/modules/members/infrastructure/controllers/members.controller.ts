@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, ValidationPipe } from "@nestjs/common"
-import type { CreateMemberUseCase } from "../../application/use-cases/create-member.use-case"
-import type { ListMembersUseCase } from "../../application/use-cases/list-members.use-case"
+import { CreateMemberUseCase } from "../../application/use-cases/create-member.use-case"
+import { ListMembersUseCase } from "../../application/use-cases/list-members.use-case"
 import type { CreateMemberDto } from "@/modules/shared/dtos/create-member.dto"
 
 @Controller("members")
