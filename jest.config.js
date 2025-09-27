@@ -8,7 +8,7 @@ module.exports = {
   collectCoverageFrom: ["**/*.(t|j)s", "!**/*.spec.ts", "!**/*.interface.ts", "!**/node_modules/**"],
   coverageDirectory: "../coverage",
   testEnvironment: "node",
-  moduleNameMapping: {
+  moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
   setupFilesAfterEnv: ["<rootDir>/../test/setup.ts"],

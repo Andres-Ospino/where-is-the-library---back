@@ -4,6 +4,7 @@ import { Member } from "@/modules/members/domain/entities/member.entity"
 import { Loan } from "../../../domain/entities/loan.entity"
 import { NotFoundError } from "@/modules/shared/errors/not-found.error"
 import { ConflictError } from "@/modules/shared/errors/conflict.error"
+import { LoanCreatedEvent } from "../../../domain/events/loan-created.event"
 import type { LoanRepositoryPort } from "../../../domain/ports/loan-repository.port"
 import type { BookRepositoryPort } from "@/modules/catalog/domain/ports/book-repository.port"
 import type { MemberRepositoryPort } from "@/modules/members/domain/ports/member-repository.port"
@@ -87,6 +88,15 @@ describe("LoanBookUseCase", () => {
     expect(mockBookRepository.findById).toHaveBeenCalledWith(1)
     expect(mockMemberRepository.findById).toHaveBeenCalledWith(1)
     expect(mockLoanRepository.findActiveLoanByBookId).toHaveBeenCalledWith(1)
+    expect(mockBookRepository.update).toHaveBeenCalledWith(book)
+    expect(book.available).toBe(false)
+    expect(mockEventBus.publish).toHaveBeenCalled()
+    const publishedEvent = mockEventBus.publish.mock.calls[0][0] as LoanCreatedEvent
+    expect(publishedEvent).toBeInstanceOf(LoanCreatedEvent)
+    expect(publishedEvent.loanId).toBe(loan.id)
+    expect(publishedEvent.bookId).toBe(command.bookId)
+    expect(publishedEvent.memberId).toBe(command.memberId)
+    expect(publishedEvent.loanDate).toEqual(loanDate)
     expect(result).toEqual(loan)
   })
 
@@ -124,5 +134,20 @@ describe("LoanBookUseCase", () => {
 
     // Act & Assert
     await expect(useCase.execute(command)).rejects.toThrow(ConflictError)
+  })
+
+  it("should throw ConflictError when an active loan already exists for the book", async () => {
+    const command = { bookId: 1, memberId: 1 }
+    const book = Book.fromPersistence(1, "Test Book", "Test Author", true)
+    const member = Member.fromPersistence(1, "John Doe", "john@example.com", "hash")
+    const activeLoan = Loan.fromPersistence(2, 1, 2, new Date("2024-01-10"))
+
+    mockBookRepository.findById.mockResolvedValue(book)
+    mockMemberRepository.findById.mockResolvedValue(member)
+    mockLoanRepository.findActiveLoanByBookId.mockResolvedValue(activeLoan)
+
+    await expect(useCase.execute(command)).rejects.toThrow(ConflictError)
+    expect(mockLoanRepository.findActiveLoanByBookId).toHaveBeenCalledWith(command.bookId)
+    expect(mockLoanRepository.save).not.toHaveBeenCalled()
   })
 })
