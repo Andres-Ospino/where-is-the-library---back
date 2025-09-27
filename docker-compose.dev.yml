@@ -1,44 +1,23 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: library_postgres_dev
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: library_app_dev
+    command: pnpm run dev
+    ports:
+      - "3000:3000"
     environment:
-      POSTGRES_DB: library_db
-      POSTGRES_USER: library_user
-      POSTGRES_PASSWORD: library_password
-    ports:
-      - "5432:5432"
+      - NODE_ENV=development
+      - PORT=3000
+      - JWT_SECRET=dev-secret
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-      - ./scripts/init-database.sql:/docker-entrypoint-initdb.d/init-database.sql
+      - .:/app
+      - /app/node_modules
     networks:
       - library_dev_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U library_user -d library_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: library_redis_dev
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_dev_data:/data
-    networks:
-      - library_dev_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_dev_data:
-  redis_dev_data:
 
 networks:
   library_dev_network:

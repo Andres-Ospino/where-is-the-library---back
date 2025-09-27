@@ -1,23 +1,5 @@
 {
-  "name": "Database Setup Scripts",
-  "description": "Collection of database setup and maintenance scripts",
-  "scripts": {
-    "setup": {
-      "description": "Set up development database with Docker",
-      "commands": [
-        "docker-compose -f scripts/docker-compose.dev.yml up -d",
-        "sleep 10",
-        "npm run prisma:migrate:dev",
-        "npm run prisma:seed"
-      ]
-    },
-    "reset": {
-      "description": "Reset database and reseed",
-      "commands": ["npm run prisma:migrate:reset --force", "npm run prisma:seed"]
-    },
-    "production-deploy": {
-      "description": "Deploy database migrations to production",
-      "commands": ["npm run prisma:generate", "npm run prisma:migrate:deploy"]
-    }
-  }
+  "name": "Data Setup Guidance",
+  "description": "The application now relies on in-memory repositories, so no database setup commands are required.",
+  "scripts": {}
 }

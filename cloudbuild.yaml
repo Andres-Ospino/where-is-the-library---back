@@ -30,20 +30,6 @@ steps:
       - 'push'
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:latest'
 
-  # Validación de variables obligatorias
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: bash
-    secretEnv:
-      - DATABASE_URL
-      - JWT_SECRET
-    args:
-      - -c
-      - |
-        if [[ -z "${DATABASE_URL}" || -z "${JWT_SECRET}" ]]; then
-          echo "DATABASE_URL y JWT_SECRET son obligatorios. Gestiona los secretos en Secret Manager."
-          exit 1
-        fi
-
   # 🔧 Limpieza de command/args obsoletos en Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: clear-run-command
@@ -62,7 +48,6 @@ steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     secretEnv:
-      - DATABASE_URL
       - JWT_SECRET
     args:
       - -c
@@ -72,8 +57,7 @@ steps:
           --region '${_REGION}' \
           --allow-unauthenticated \
           --platform managed \
-          --add-cloudsql-instances '$PROJECT_ID:${_REGION}:${_INSTANCE_NAME}' \
-          --set-env-vars "NODE_ENV=production,PORT=8080,DATABASE_URL=${DATABASE_URL},JWT_SECRET=${JWT_SECRET}" \
+          --set-env-vars "NODE_ENV=production,PORT=8080,JWT_SECRET=${JWT_SECRET}" \
           --project '$PROJECT_ID'
 
 images:
@@ -84,9 +68,7 @@ substitutions:
   _SERVICE_NAME: library-management-system
   _REGION: us-central1
   _ARTIFACT_REPOSITORY: library-management-system
-  _INSTANCE_NAME: biblioteca-sql   # 👈 aquí
   _IMAGE_TAG: latest
-  _DATABASE_URL: 'projects/$PROJECT_ID/secrets/library-database-url/versions/latest'
   _JWT_SECRET: 'projects/$PROJECT_ID/secrets/library-jwt-secret/versions/latest'
 
 options:
@@ -95,7 +77,5 @@ options:
 
 availableSecrets:
   secretManager:
-    - versionName: '${_DATABASE_URL}'
-      env: DATABASE_URL
     - versionName: '${_JWT_SECRET}'
       env: JWT_SECRET

@@ -11,7 +11,6 @@ import { type EventBusPort, EVENT_BUS_TOKEN } from "@/modules/shared/ports/event
 import { NotFoundError } from "@/modules/shared/errors/not-found.error"
 import { ConflictError } from "@/modules/shared/errors/conflict.error"
 import { LoanCreatedEvent } from "../../domain/events/loan-created.event"
-import { PrismaService } from "@/core/database/prisma.service"
 
 export interface LoanBookCommand {
   bookId: number
@@ -31,7 +30,6 @@ export class LoanBookUseCase {
     private readonly dateProvider: DateProviderPort,
     @Inject(EVENT_BUS_TOKEN)
     private readonly eventBus: EventBusPort,
-    private readonly prisma: PrismaService,
   ) {}
 
   async execute(command: LoanBookCommand): Promise<Loan> {
@@ -58,24 +56,21 @@ export class LoanBookUseCase {
       throw new ConflictError("Book already has an active loan")
     }
 
-    // Execute transaction: create loan and mark book as unavailable
-    return await this.prisma.$transaction(async (tx) => {
-      // Create loan
-      const loanDate = this.dateProvider.now()
-      const loan = Loan.create(command.bookId, command.memberId, loanDate)
-      const savedLoan = await this.loanRepository.save(loan)
+    // Create loan
+    const loanDate = this.dateProvider.now()
+    const loan = Loan.create(command.bookId, command.memberId, loanDate)
+    const savedLoan = await this.loanRepository.save(loan)
 
-      // Mark book as unavailable
-      book.markAsUnavailable()
-      await this.bookRepository.update(book)
+    // Mark book as unavailable
+    book.markAsUnavailable()
+    await this.bookRepository.update(book)
 
-      // Publish domain event
-      if (savedLoan.id) {
-        const event = new LoanCreatedEvent(savedLoan.id, command.bookId, command.memberId, loanDate)
-        await this.eventBus.publish(event)
-      }
+    // Publish domain event
+    if (savedLoan.id) {
+      const event = new LoanCreatedEvent(savedLoan.id, command.bookId, command.memberId, loanDate)
+      await this.eventBus.publish(event)
+    }
 
-      return savedLoan
-    })
+    return savedLoan
   }
 }

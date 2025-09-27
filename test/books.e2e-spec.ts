@@ -1,13 +1,22 @@
 import { Test, type TestingModule } from "@nestjs/testing"
 import { type INestApplication, ValidationPipe } from "@nestjs/common"
 import * as request from "supertest"
-import { AppModule } from "@/app.module"
-import { PrismaService } from "@/core/database/prisma.service"
 import { describe, expect, it, beforeEach, afterAll, beforeAll } from "@jest/globals"
+import { AppModule } from "@/app.module"
+import { GlobalExceptionFilter } from "@/core/filters/global-exception.filter"
+import { Book } from "@/modules/catalog/domain/entities/book.entity"
+import { BOOK_REPOSITORY_TOKEN } from "@/modules/catalog/domain/ports/book-repository.port"
+import { InMemoryBookRepository } from "@/modules/catalog/infrastructure/repositories/in-memory-book.repository"
+import { MEMBER_REPOSITORY_TOKEN } from "@/modules/members/domain/ports/member-repository.port"
+import { InMemoryMemberRepository } from "@/modules/members/infrastructure/repositories/in-memory-member.repository"
+import { LOAN_REPOSITORY_TOKEN } from "@/modules/loans/domain/ports/loan-repository.port"
+import { InMemoryLoanRepository } from "@/modules/loans/infrastructure/repositories/in-memory-loan.repository"
 
 describe("Books (e2e)", () => {
   let app: INestApplication
-  let prisma: PrismaService
+  let bookRepository: InMemoryBookRepository
+  let memberRepository: InMemoryMemberRepository
+  let loanRepository: InMemoryLoanRepository
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -15,84 +24,78 @@ describe("Books (e2e)", () => {
     }).compile()
 
     app = moduleFixture.createNestApplication()
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+    app.useGlobalFilters(new GlobalExceptionFilter())
 
-    prisma = app.get<PrismaService>(PrismaService)
+    bookRepository = app.get(BOOK_REPOSITORY_TOKEN) as InMemoryBookRepository
+    memberRepository = app.get(MEMBER_REPOSITORY_TOKEN) as InMemoryMemberRepository
+    loanRepository = app.get(LOAN_REPOSITORY_TOKEN) as InMemoryLoanRepository
 
     await app.init()
   })
 
   beforeEach(async () => {
-    // Clean database before each test
-    await prisma.loan.deleteMany()
-    await prisma.book.deleteMany()
-    await prisma.member.deleteMany()
+    loanRepository.clear()
+    bookRepository.clear()
+    memberRepository.clear()
   })
 
   afterAll(async () => {
-    await prisma.$disconnect()
     await app.close()
   })
 
   describe("/books (POST)", () => {
-    it("should create a new book", () => {
-      return request(app.getHttpServer())
+    it("should create a new book", async () => {
+      const response = await request(app.getHttpServer())
         .post("/books")
         .send({
           title: "The Great Gatsby",
           author: "F. Scott Fitzgerald",
         })
-        .expect(201)
-        .expect((res) => {
-          expect(res.body).toHaveProperty("id")
-          expect(res.body.title).toBe("The Great Gatsby")
-          expect(res.body.author).toBe("F. Scott Fitzgerald")
-          expect(res.body.available).toBe(true)
-        })
+      expect(response.status).toBe(201)
+      expect(response.body).toHaveProperty("id")
+      expect(response.body.title).toBe("The Great Gatsby")
+      expect(response.body.author).toBe("F. Scott Fitzgerald")
+      expect(response.body.available).toBe(true)
     })
 
-    it("should return 400 for invalid data", () => {
-      return request(app.getHttpServer())
+    it("should return 400 for invalid data", async () => {
+      const response = await request(app.getHttpServer())
         .post("/books")
         .send({
           title: "",
           author: "F. Scott Fitzgerald",
         })
-        .expect(400)
+
+      expect(response.status).toBe(400)
     })
   })
 
   describe("/books (GET)", () => {
     beforeEach(async () => {
-      await prisma.book.createMany({
-        data: [
-          { title: "Book 1", author: "Author 1", available: true },
-          { title: "Book 2", author: "Author 2", available: false },
-        ],
-      })
+      await bookRepository.save(Book.create("Book 1", "Author 1"))
+      const unavailable = await bookRepository.save(Book.create("Book 2", "Author 2"))
+      unavailable.markAsUnavailable()
+      await bookRepository.update(unavailable)
     })
 
-    it("should return all books", () => {
-      return request(app.getHttpServer())
-        .get("/books")
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toHaveLength(2)
-          expect(res.body[0]).toHaveProperty("id")
-          expect(res.body[0]).toHaveProperty("title")
-          expect(res.body[0]).toHaveProperty("author")
-          expect(res.body[0]).toHaveProperty("available")
-        })
+    it("should return all books", async () => {
+      const response = await request(app.getHttpServer()).get("/books")
+
+      expect(response.status).toBe(200)
+      expect(response.body).toHaveLength(2)
+      expect(response.body[0]).toHaveProperty("id")
+      expect(response.body[0]).toHaveProperty("title")
+      expect(response.body[0]).toHaveProperty("author")
+      expect(response.body[0]).toHaveProperty("available")
     })
 
-    it("should filter books by title", () => {
-      return request(app.getHttpServer())
-        .get("/books?title=Book 1")
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toHaveLength(1)
-          expect(res.body[0].title).toBe("Book 1")
-        })
+    it("should filter books by title", async () => {
+      const response = await request(app.getHttpServer()).get("/books?title=Book 1")
+
+      expect(response.status).toBe(200)
+      expect(response.body).toHaveLength(1)
+      expect(response.body[0].title).toBe("Book 1")
     })
   })
 
@@ -100,34 +103,30 @@ describe("Books (e2e)", () => {
     let bookId: number
 
     beforeEach(async () => {
-      const book = await prisma.book.create({
-        data: { title: "Original Title", author: "Original Author", available: true },
-      })
-      bookId = book.id
+      const book = await bookRepository.save(Book.create("Original Title", "Original Author"))
+      bookId = book.id as number
     })
 
-    it("should update a book", () => {
-      return request(app.getHttpServer())
+    it("should update a book", async () => {
+      const response = await request(app.getHttpServer())
         .patch(`/books/${bookId}`)
         .send({
           title: "Updated Title",
           author: "Updated Author",
         })
-        .expect(200)
-        .expect((res) => {
-          expect(res.body.title).toBe("Updated Title")
-          expect(res.body.author).toBe("Updated Author")
-        })
+      expect(response.status).toBe(200)
+      expect(response.body.title).toBe("Updated Title")
+      expect(response.body.author).toBe("Updated Author")
     })
 
-    it("should return 404 for non-existent book", () => {
-      return request(app.getHttpServer())
+    it("should return 404 for non-existent book", async () => {
+      const response = await request(app.getHttpServer())
         .patch("/books/999")
         .send({
           title: "Updated Title",
           author: "Updated Author",
         })
-        .expect(404)
+      expect(response.status).toBe(404)
     })
   })
 
@@ -135,23 +134,21 @@ describe("Books (e2e)", () => {
     let bookId: number
 
     beforeEach(async () => {
-      const book = await prisma.book.create({
-        data: { title: "Book to Delete", author: "Author", available: true },
-      })
-      bookId = book.id
+      const book = await bookRepository.save(Book.create("Book to Delete", "Author"))
+      bookId = book.id as number
     })
 
-    it("should delete a book", () => {
-      return request(app.getHttpServer())
-        .delete(`/books/${bookId}`)
-        .expect(200)
-        .expect((res) => {
-          expect(res.body.message).toBe("Book deleted successfully")
-        })
+    it("should delete a book", async () => {
+      const response = await request(app.getHttpServer()).delete(`/books/${bookId}`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.message).toBe("Book deleted successfully")
     })
 
-    it("should return 404 for non-existent book", () => {
-      return request(app.getHttpServer()).delete("/books/999").expect(404)
+    it("should return 404 for non-existent book", async () => {
+      const response = await request(app.getHttpServer()).delete("/books/999")
+
+      expect(response.status).toBe(404)
     })
   })
 })

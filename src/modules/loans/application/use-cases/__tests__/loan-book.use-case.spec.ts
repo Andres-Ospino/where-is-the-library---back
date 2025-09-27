@@ -9,10 +9,6 @@ import type { BookRepositoryPort } from "@/modules/catalog/domain/ports/book-rep
 import type { MemberRepositoryPort } from "@/modules/members/domain/ports/member-repository.port"
 import type { DateProviderPort } from "@/modules/shared/ports/date-provider.port"
 import type { EventBusPort } from "@/modules/shared/ports/event-bus.port"
-import type { PrismaService } from "@/core/database/prisma.service"
-
-type PrismaTransactionMock = Pick<PrismaService, "$transaction">
-
 describe("LoanBookUseCase", () => {
   let useCase: LoanBookUseCase
   let mockLoanRepository: jest.Mocked<LoanRepositoryPort>
@@ -20,8 +16,6 @@ describe("LoanBookUseCase", () => {
   let mockMemberRepository: jest.Mocked<MemberRepositoryPort>
   let mockDateProvider: jest.Mocked<DateProviderPort>
   let mockEventBus: jest.Mocked<EventBusPort>
-  let mockPrisma: jest.Mocked<PrismaTransactionMock>
-  let prismaServiceMock: PrismaService
 
   beforeEach(() => {
     mockLoanRepository = {
@@ -63,19 +57,12 @@ describe("LoanBookUseCase", () => {
       publish: jest.fn(),
     } as jest.Mocked<EventBusPort>
 
-    mockPrisma = {
-      $transaction: jest.fn(),
-    } as jest.Mocked<PrismaTransactionMock>
-
-    prismaServiceMock = mockPrisma as unknown as PrismaService
-
     useCase = new LoanBookUseCase(
       mockLoanRepository,
       mockBookRepository,
       mockMemberRepository,
       mockDateProvider,
       mockEventBus,
-      prismaServiceMock,
     )
   })
 
@@ -92,9 +79,6 @@ describe("LoanBookUseCase", () => {
     mockLoanRepository.findActiveLoanByBookId.mockResolvedValue(null)
     mockDateProvider.now.mockReturnValue(loanDate)
     mockLoanRepository.save.mockResolvedValue(loan)
-    mockPrisma.$transaction.mockImplementation(async (callback: any) => {
-      return await callback(prismaServiceMock)
-    })
 
     // Act
     const result = await useCase.execute(command)

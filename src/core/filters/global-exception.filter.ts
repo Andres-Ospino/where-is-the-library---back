@@ -16,7 +16,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       status = exception.getStatus()
-      message = exception.message
+      const responseBody = exception.getResponse()
+      if (typeof responseBody === "string") {
+        message = responseBody
+      } else if (responseBody && typeof responseBody === "object" && "message" in responseBody) {
+        const extracted = (responseBody as { message?: unknown }).message
+        message = Array.isArray(extracted) ? extracted.join(", ") : String(extracted ?? exception.message)
+      } else {
+        message = exception.message
+      }
     } else if (exception instanceof NotFoundError) {
       status = HttpStatus.NOT_FOUND
       message = exception.message
