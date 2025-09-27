@@ -4,6 +4,7 @@ import { TypeOrmModule, type TypeOrmModuleOptions } from "@nestjs/typeorm"
 import { BookOrmEntity } from "@/modules/catalog/infrastructure/persistence/typeorm/book.orm-entity"
 import { MemberOrmEntity } from "@/modules/members/infrastructure/persistence/typeorm/member.orm-entity"
 import { LoanOrmEntity } from "@/modules/loans/infrastructure/persistence/typeorm/loan.orm-entity"
+import { cloudSqlDefaults } from "@/config/cloudsql.config"
 
 function buildTypeOrmOptions(configService: ConfigService): TypeOrmModuleOptions {
   const nodeEnv = configService.get<string>("NODE_ENV")
@@ -19,7 +20,7 @@ function buildTypeOrmOptions(configService: ConfigService): TypeOrmModuleOptions
     }
   }
 
-  const databaseUrl = configService.get<string>("DATABASE_URL")
+  const databaseUrl = configService.get<string>("DATABASE_URL") ?? cloudSqlDefaults.database.url
   if (!databaseUrl) {
     throw new Error("DATABASE_URL must be defined to initialize the database connection")
   }
