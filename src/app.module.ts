@@ -7,12 +7,16 @@ import { MembersModule } from "@/modules/members/members.module"
 import { LoansModule } from "@/modules/loans/loans.module"
 import { HealthModule } from "./health/health.module"
 import { AuthModule } from "@/modules/auth/auth.module"
+import { ensureCloudSqlEnv, loadCloudSqlConfig } from "@/config/cloudsql.config"
+
+ensureCloudSqlEnv()
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ".env",
+      load: [loadCloudSqlConfig],
     }),
     LoggerModule.forRoot({
       pinoHttp: {
