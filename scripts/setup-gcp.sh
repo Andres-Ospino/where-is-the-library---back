@@ -55,6 +55,13 @@ fi
 JWT_SECRET=${JWT_SECRET:-""}
 if [[ "${JWT_SECRET}" == "define-un-secreto-robusto" || -z "${JWT_SECRET}" ]]; then
   echo "⚠️ Recuerda definir JWT_SECRET en .env.gcloud.local antes del despliegue."
+<<<<<<< HEAD
+=======
+fi
+
+if [[ -z "${DATABASE_URL:-}" || "${DATABASE_URL}" == *"REEMPLAZA_CONTRASENA"* ]]; then
+  echo "⚠️ Define DATABASE_URL con las credenciales reales de tu instancia de Cloud SQL antes de desplegar."
+>>>>>>> origin/codex/remove-prisma-ldugxq
 fi
 
 echo "✅ Recursos configurados correctamente"

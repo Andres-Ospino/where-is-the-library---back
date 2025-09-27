@@ -3,7 +3,10 @@ import { Controller, Get, Post, Body, ValidationPipe } from "@nestjs/common"
 import { CreateMemberUseCase } from "../../application/use-cases/create-member.use-case"
 import { ListMembersUseCase } from "../../application/use-cases/list-members.use-case"
 import { CreateMemberDto } from "@/modules/shared/dtos/create-member.dto"
+<<<<<<< HEAD
 import { Public } from "@/modules/auth/decorators/public.decorator"
+=======
+>>>>>>> origin/codex/remove-prisma-ldugxq
 
 @Controller("members")
 export class MembersController {

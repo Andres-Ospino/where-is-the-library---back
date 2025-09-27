@@ -5,6 +5,7 @@ import { describe, expect, it, beforeEach, afterAll, beforeAll } from "@jest/glo
 import { AppModule } from "@/app.module"
 import { GlobalExceptionFilter } from "@/core/filters/global-exception.filter"
 import { Book } from "@/modules/catalog/domain/entities/book.entity"
+<<<<<<< HEAD
 import { BOOK_REPOSITORY_TOKEN } from "@/modules/catalog/domain/ports/book-repository.port"
 import { InMemoryBookRepository } from "@/modules/catalog/infrastructure/repositories/in-memory-book.repository"
 import { MEMBER_REPOSITORY_TOKEN } from "@/modules/members/domain/ports/member-repository.port"
@@ -22,6 +23,18 @@ describe("Books (e2e)", () => {
   let hashingService: HashingPort
   let authToken: string
   const memberPassword = "Password123!"
+=======
+import { type BookRepositoryPort, BOOK_REPOSITORY_TOKEN } from "@/modules/catalog/domain/ports/book-repository.port"
+import { DataSource } from "typeorm"
+import { LoanOrmEntity } from "@/modules/loans/infrastructure/persistence/typeorm/loan.orm-entity"
+import { BookOrmEntity } from "@/modules/catalog/infrastructure/persistence/typeorm/book.orm-entity"
+import { MemberOrmEntity } from "@/modules/members/infrastructure/persistence/typeorm/member.orm-entity"
+
+describe("Books (e2e)", () => {
+  let app: INestApplication
+  let bookRepository: BookRepositoryPort
+  let dataSource: DataSource
+>>>>>>> origin/codex/remove-prisma-ldugxq
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -32,9 +45,14 @@ describe("Books (e2e)", () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
     app.useGlobalFilters(new GlobalExceptionFilter())
 
+<<<<<<< HEAD
     bookRepository = app.get(BOOK_REPOSITORY_TOKEN) as InMemoryBookRepository
     memberRepository = app.get(MEMBER_REPOSITORY_TOKEN) as InMemoryMemberRepository
     loanRepository = app.get(LOAN_REPOSITORY_TOKEN) as InMemoryLoanRepository
+=======
+    bookRepository = app.get(BOOK_REPOSITORY_TOKEN) as BookRepositoryPort
+    dataSource = app.get(DataSource)
+>>>>>>> origin/codex/remove-prisma-ldugxq
 
     await app.init()
 
@@ -42,6 +60,7 @@ describe("Books (e2e)", () => {
   })
 
   beforeEach(async () => {
+<<<<<<< HEAD
     loanRepository.clear()
     bookRepository.clear()
     memberRepository.clear()
@@ -56,6 +75,11 @@ describe("Books (e2e)", () => {
     expect(loginResponse.status).toBe(201)
     authToken = loginResponse.body.accessToken
     expect(authToken).toBeDefined()
+=======
+    await dataSource.getRepository(LoanOrmEntity).clear()
+    await dataSource.getRepository(BookOrmEntity).clear()
+    await dataSource.getRepository(MemberOrmEntity).clear()
+>>>>>>> origin/codex/remove-prisma-ldugxq
   })
 
   afterAll(async () => {
@@ -100,9 +124,13 @@ describe("Books (e2e)", () => {
     })
 
     it("should return all books", async () => {
+<<<<<<< HEAD
       const response = await request(app.getHttpServer())
         .get("/books")
         .set("Authorization", `Bearer ${authToken}`)
+=======
+      const response = await request(app.getHttpServer()).get("/books")
+>>>>>>> origin/codex/remove-prisma-ldugxq
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(2)
@@ -113,9 +141,13 @@ describe("Books (e2e)", () => {
     })
 
     it("should filter books by title", async () => {
+<<<<<<< HEAD
       const response = await request(app.getHttpServer())
         .get("/books?title=Book 1")
         .set("Authorization", `Bearer ${authToken}`)
+=======
+      const response = await request(app.getHttpServer()).get("/books?title=Book 1")
+>>>>>>> origin/codex/remove-prisma-ldugxq
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(1)
@@ -165,18 +197,26 @@ describe("Books (e2e)", () => {
     })
 
     it("should delete a book", async () => {
+<<<<<<< HEAD
       const response = await request(app.getHttpServer())
         .delete(`/books/${bookId}`)
         .set("Authorization", `Bearer ${authToken}`)
+=======
+      const response = await request(app.getHttpServer()).delete(`/books/${bookId}`)
+>>>>>>> origin/codex/remove-prisma-ldugxq
 
       expect(response.status).toBe(200)
       expect(response.body.message).toBe("Book deleted successfully")
     })
 
     it("should return 404 for non-existent book", async () => {
+<<<<<<< HEAD
       const response = await request(app.getHttpServer())
         .delete("/books/999")
         .set("Authorization", `Bearer ${authToken}`)
+=======
+      const response = await request(app.getHttpServer()).delete("/books/999")
+>>>>>>> origin/codex/remove-prisma-ldugxq
 
       expect(response.status).toBe(404)
     })

@@ -10,6 +10,7 @@ HEALTH_URL=${HEALTH_URL:-""}
 ARTIFACT_REPOSITORY=${ARTIFACT_REPOSITORY:-"library-management-system"}
 IMAGE_TAG=${IMAGE_TAG:-$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M%S)}
 JWT_SECRET=${JWT_SECRET:-""}
+DATABASE_URL=${DATABASE_URL:-""}
 
 usage() {
   cat <<USAGE
@@ -87,12 +88,23 @@ else
   echo "ℹ️ Script ${PIPELINE_SCRIPT} no es ejecutable o no existe. Usando gcloud builds submit por defecto."
   if [[ -z "${JWT_SECRET}" || "${JWT_SECRET}" == "define-un-secreto-robusto" ]]; then
     echo "❌ Debes proporcionar JWT_SECRET válido a través de variables de entorno para usar gcloud builds submit." >&2
+<<<<<<< HEAD
+=======
+    exit 1
+  fi
+  if [[ -z "${DATABASE_URL}" ]]; then
+    echo "❌ Debes proporcionar DATABASE_URL válido a través de variables de entorno para usar gcloud builds submit." >&2
+>>>>>>> origin/codex/remove-prisma-ldugxq
     exit 1
   fi
   gcloud builds submit \
     --config cloudbuild.yaml \
     --project "${PROJECT_ID}" \
+<<<<<<< HEAD
     --substitutions=_SERVICE_NAME="${SERVICE_NAME}",_REGION="${REGION}",_ARTIFACT_REPOSITORY="${ARTIFACT_REPOSITORY}",_IMAGE_TAG="${IMAGE_TAG}",_JWT_SECRET="${JWT_SECRET}" \
+=======
+    --substitutions=_SERVICE_NAME="${SERVICE_NAME}",_REGION="${REGION}",_ARTIFACT_REPOSITORY="${ARTIFACT_REPOSITORY}",_IMAGE_TAG="${IMAGE_TAG}",_JWT_SECRET="${JWT_SECRET}",_DATABASE_URL="${DATABASE_URL}" \
+>>>>>>> origin/codex/remove-prisma-ldugxq
     --quiet
 fi
 

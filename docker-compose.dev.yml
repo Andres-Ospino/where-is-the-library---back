@@ -14,10 +14,48 @@ services:
       - PORT=3000
       - JWT_SECRET=dev-secret
     volumes:
+<<<<<<< HEAD
       - .:/app
       - /app/node_modules
     networks:
       - library_dev_network
+=======
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./scripts/init-database.sql:/docker-entrypoint-initdb.d/init-database.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U library_user -d library_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - library_dev_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: library_app_dev
+    command: pnpm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://library_user:library_password@postgres:5432/library_db
+      - JWT_SECRET=dev-secret
+      - ALLOWED_ORIGINS=http://localhost:3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - library_dev_network
+
+volumes:
+  postgres_dev_data:
+>>>>>>> origin/codex/remove-prisma-ldugxq
 
 networks:
   library_dev_network:

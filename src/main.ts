@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { join } from "node:path"
 
+=======
+import "reflect-metadata"
+import { NestFactory } from "@nestjs/core"
+>>>>>>> origin/codex/remove-prisma-ldugxq
 import { ValidationPipe } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
 import { NestExpressApplication } from "@nestjs/platform-express"
