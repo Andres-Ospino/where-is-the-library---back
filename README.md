@@ -100,6 +100,16 @@ pnpm test
 pnpm test:e2e
 ```
 
+| Comando | Descripción |
+| --- | --- |
+| `pnpm test` | Ejecuta todo el conjunto de pruebas unitarias (casos de uso y entidades de catálogo, préstamos, socios y autenticación). |
+| `pnpm test -- --testPathPattern="members"` | Filtra las pruebas unitarias relacionadas con el módulo de socios (entidades y casos de uso). |
+| `pnpm test -- --testPathPattern="auth"` | Ejecuta únicamente las pruebas unitarias del módulo de autenticación (login). |
+| `pnpm test -- --testPathPattern="loans"` | Limita la ejecución a las pruebas unitarias de préstamos (incluye loan-book, return-book y list-loans). |
+| `pnpm test:e2e` | Lanza todas las suites end-to-end (libros, préstamos, socios y login). |
+| `pnpm test:e2e -- --testPathPattern="members"` | Ejecuta solamente la suite end-to-end de `/members`. |
+| `pnpm test:e2e -- --testPathPattern="auth"` | Ejecuta únicamente la suite end-to-end de `/auth/login`. |
+
 Las pruebas end-to-end inicializan TypeORM en modo SQLite en memoria, por lo que no requieren servicios externos.
 
 ## 🐳 Uso con Docker Compose
