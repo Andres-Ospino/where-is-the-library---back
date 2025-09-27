@@ -1,5 +1,5 @@
 # Multi-stage build for production optimization
-FROM node:18-alpine AS base
+FROM node:18-alpine3.18 AS base
 
 RUN apk add --no-cache libc6-compat openssl openssl1.1-compat \
   && corepack enable
