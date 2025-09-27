@@ -1,7 +1,7 @@
 # Multi-stage build for production optimization
 FROM node:18-alpine3.18 AS base
 
-RUN apk add --no-cache libc6-compat openssl openssl1.1-compat \
+RUN apk add --no-cache libc6-compat openssl openssl1.1-compat curl \
   && corepack enable \
   && corepack prepare pnpm@9.12.0 --activate
 
