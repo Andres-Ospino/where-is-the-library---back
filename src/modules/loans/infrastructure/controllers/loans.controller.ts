@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query, ParseIntPipe } from "@nestjs/common"
-import type { LoanBookUseCase } from "../../application/use-cases/loan-book.use-case"
-import type { ReturnBookUseCase } from "../../application/use-cases/return-book.use-case"
-import type { ListLoansUseCase } from "../../application/use-cases/list-loans.use-case"
+import { LoanBookUseCase } from "../../application/use-cases/loan-book.use-case"
+import { ReturnBookUseCase } from "../../application/use-cases/return-book.use-case"
+import { ListLoansUseCase } from "../../application/use-cases/list-loans.use-case"
 import type { CreateLoanDto } from "@/modules/shared/dtos/create-loan.dto"
 
 @Controller("loans")
