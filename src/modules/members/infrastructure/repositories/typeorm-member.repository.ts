@@ -13,14 +13,13 @@ export class TypeormMemberRepository implements MemberRepositoryPort {
   ) {}
 
   private toDomain(entity: MemberOrmEntity): Member {
-    return Member.fromPersistence(entity.id, entity.name, entity.email, entity.passwordHash)
+    return Member.fromPersistence(entity.id, entity.name, entity.email)
   }
 
   async save(member: Member): Promise<Member> {
     const entity = this.repository.create({
       name: member.name,
       email: member.email,
-      passwordHash: member.passwordHash,
     })
 
     const saved = await this.repository.save(entity)
@@ -52,7 +51,6 @@ export class TypeormMemberRepository implements MemberRepositoryPort {
       id,
       name: member.name,
       email: member.email,
-      passwordHash: member.passwordHash,
     })
 
     if (!entity) {

@@ -24,6 +24,30 @@ CREATE TABLE IF NOT EXISTS members (
 
 CREATE INDEX IF NOT EXISTS idx_members_email ON members(email);
 
+ALTER TABLE members
+    DROP COLUMN IF EXISTS password_hash;
+
+CREATE TABLE IF NOT EXISTS auth_accounts (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_accounts_email ON auth_accounts(email);
+
+INSERT INTO members (name, email)
+VALUES ('Administrador', 'admin@whereisthelibrary.com')
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO auth_accounts (email, password_hash)
+VALUES (
+    'admin@whereisthelibrary.com',
+    'pbkdf2:sha512:310000:d1c56112f4a84aabbd2f82f1645f4c0a:5805b4024fe08c3ce463e32951b69b17ee0439ab4c3e2ec67d9341bc04d29c4592befc589355efe99280a4fcde6ebff05dbdf2f762f1de6589da373d6cf367dd'
+)
+ON CONFLICT (email) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS loans (
     id SERIAL PRIMARY KEY,
     book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,

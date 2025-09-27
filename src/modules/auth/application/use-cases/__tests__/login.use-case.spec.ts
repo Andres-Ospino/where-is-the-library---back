@@ -1,15 +1,18 @@
 import { LoginUseCase } from "../login.use-case"
+import { AuthAccount } from "@/modules/auth-accounts/domain/entities/auth-account.entity"
+import type { AuthAccountRepositoryPort } from "@/modules/auth-accounts/domain/ports/auth-account-repository.port"
 import { Member } from "@/modules/members/domain/entities/member.entity"
-import type { MemberRepositoryPort } from "@/modules/members/domain/ports/member-repository.port"
+import { FindMemberByEmailUseCase } from "@/modules/members/application/use-cases/find-member-by-email.use-case"
 import type { HashingPort } from "@/modules/shared/ports/hashing.port"
 import { JwtService } from "@nestjs/jwt"
 import { UnauthorizedException } from "@nestjs/common"
 
 describe("LoginUseCase", () => {
   let useCase: LoginUseCase
-  let mockMemberRepository: jest.Mocked<MemberRepositoryPort>
+  let mockAuthAccountRepository: jest.Mocked<AuthAccountRepositoryPort>
   let mockHashingService: jest.Mocked<HashingPort>
   let mockJwtService: jest.Mocked<JwtService>
+  let mockFindMemberByEmailUseCase: jest.Mocked<FindMemberByEmailUseCase>
   let dateNowSpy: jest.SpyInstance<number, []>
 
   const command = {
@@ -22,14 +25,10 @@ describe("LoginUseCase", () => {
   beforeEach(() => {
     dateNowSpy = jest.spyOn(Date, "now").mockReturnValue(nowInSeconds * 1000)
 
-    mockMemberRepository = {
-      save: jest.fn(),
-      findById: jest.fn(),
-      findAll: jest.fn(),
+    mockAuthAccountRepository = {
       findByEmail: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    } as jest.Mocked<MemberRepositoryPort>
+      save: jest.fn(),
+    } as jest.Mocked<AuthAccountRepositoryPort>
 
     mockHashingService = {
       hash: jest.fn(),
@@ -44,7 +43,16 @@ describe("LoginUseCase", () => {
       decode: jest.fn(),
     } as unknown as jest.Mocked<JwtService>
 
-    useCase = new LoginUseCase(mockMemberRepository, mockJwtService, mockHashingService)
+    mockFindMemberByEmailUseCase = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<FindMemberByEmailUseCase>
+
+    useCase = new LoginUseCase(
+      mockAuthAccountRepository,
+      mockJwtService,
+      mockHashingService,
+      mockFindMemberByEmailUseCase,
+    )
   })
 
   afterEach(() => {
@@ -52,16 +60,19 @@ describe("LoginUseCase", () => {
   })
 
   it("should authenticate a member with valid credentials", async () => {
-    const member = Member.fromPersistence(1, "Ada Lovelace", command.email, "hashed")
-    mockMemberRepository.findByEmail.mockResolvedValue(member)
+    const authAccount = AuthAccount.fromPersistence(1, command.email, "hashed")
+    mockAuthAccountRepository.findByEmail.mockResolvedValue(authAccount)
     mockHashingService.compare.mockResolvedValue(true)
     mockJwtService.signAsync.mockResolvedValue("signed-token")
     mockJwtService.decode.mockReturnValue({ exp: nowInSeconds + 3600 })
+    const member = Member.fromPersistence(1, "Ada Lovelace", command.email)
+    mockFindMemberByEmailUseCase.execute.mockResolvedValue(member)
 
     const result = await useCase.execute(command)
 
-    expect(mockMemberRepository.findByEmail).toHaveBeenCalledWith(command.email)
-    expect(mockHashingService.compare).toHaveBeenCalledWith(command.password, member.passwordHash)
+    expect(mockAuthAccountRepository.findByEmail).toHaveBeenCalledWith(command.email)
+    expect(mockHashingService.compare).toHaveBeenCalledWith(command.password, authAccount.passwordHash)
+    expect(mockFindMemberByEmailUseCase.execute).toHaveBeenCalledWith(command.email)
     expect(mockJwtService.signAsync).toHaveBeenCalledWith({
       sub: member.id,
       email: member.email,
@@ -73,7 +84,7 @@ describe("LoginUseCase", () => {
   })
 
   it("should throw when member does not exist", async () => {
-    mockMemberRepository.findByEmail.mockResolvedValue(null)
+    mockAuthAccountRepository.findByEmail.mockResolvedValue(null)
 
     await expect(useCase.execute(command)).rejects.toThrow(UnauthorizedException)
     expect(mockHashingService.compare).not.toHaveBeenCalled()
@@ -81,22 +92,35 @@ describe("LoginUseCase", () => {
   })
 
   it("should throw when password is invalid", async () => {
-    const member = Member.fromPersistence(1, "Ada Lovelace", command.email, "hashed")
-    mockMemberRepository.findByEmail.mockResolvedValue(member)
+    const authAccount = AuthAccount.fromPersistence(1, command.email, "hashed")
+    mockAuthAccountRepository.findByEmail.mockResolvedValue(authAccount)
     mockHashingService.compare.mockResolvedValue(false)
 
     await expect(useCase.execute(command)).rejects.toThrow(UnauthorizedException)
-    expect(mockHashingService.compare).toHaveBeenCalledWith(command.password, member.passwordHash)
+    expect(mockHashingService.compare).toHaveBeenCalledWith(command.password, authAccount.passwordHash)
     expect(mockJwtService.signAsync).not.toHaveBeenCalled()
   })
 
   it("should throw when member has no identifier", async () => {
-    const member = Member.create("Ada Lovelace", command.email, "hashed")
-    mockMemberRepository.findByEmail.mockResolvedValue(member)
+    const authAccount = AuthAccount.fromPersistence(1, command.email, "hashed")
+    mockAuthAccountRepository.findByEmail.mockResolvedValue(authAccount)
     mockHashingService.compare.mockResolvedValue(true)
+    const member = Member.create("Ada Lovelace", command.email)
+    mockFindMemberByEmailUseCase.execute.mockResolvedValue(member)
 
     await expect(useCase.execute(command)).rejects.toThrow(UnauthorizedException)
-    expect(mockHashingService.compare).toHaveBeenCalledWith(command.password, member.passwordHash)
+    expect(mockHashingService.compare).toHaveBeenCalledWith(command.password, authAccount.passwordHash)
+    expect(mockJwtService.signAsync).not.toHaveBeenCalled()
+  })
+
+  it("should throw when member information is missing", async () => {
+    const authAccount = AuthAccount.fromPersistence(1, command.email, "hashed")
+    mockAuthAccountRepository.findByEmail.mockResolvedValue(authAccount)
+    mockHashingService.compare.mockResolvedValue(true)
+    mockFindMemberByEmailUseCase.execute.mockResolvedValue(null)
+
+    await expect(useCase.execute(command)).rejects.toThrow(UnauthorizedException)
+    expect(mockFindMemberByEmailUseCase.execute).toHaveBeenCalledWith(command.email)
     expect(mockJwtService.signAsync).not.toHaveBeenCalled()
   })
 })

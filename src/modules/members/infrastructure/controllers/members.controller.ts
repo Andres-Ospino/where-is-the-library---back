@@ -31,7 +31,6 @@ export class MembersController {
     const member = await this.createMemberUseCase.execute({
       name: createMemberDto.name,
       email: createMemberDto.email,
-      password: createMemberDto.password,
     })
 
     return MemberResponseDto.fromEntity(member)
