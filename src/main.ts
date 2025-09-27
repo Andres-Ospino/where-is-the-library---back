@@ -3,6 +3,7 @@ import { ValidationPipe } from "@nestjs/common"
 import { Logger } from "nestjs-pino"
 import { AppModule } from "./app.module"
 import { GlobalExceptionFilter } from "@/core/filters/global-exception.filter"
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true })
@@ -23,6 +24,20 @@ async function bootstrap() {
 
   // Global exception filter
   app.useGlobalFilters(new GlobalExceptionFilter())
+
+  // Swagger documentation at root path
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle("Library Management API")
+    .setDescription("API documentation for the library management system")
+    .setVersion("1.0.0")
+    .build()
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig)
+  SwaggerModule.setup("/", app, swaggerDocument, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+    },
+  })
 
   // CORS configuration
   app.enableCors({
