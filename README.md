@@ -199,19 +199,58 @@ echo "DATABASE_URL=postgresql://library_user:$DB_PASSWORD@/library_db?host=/clou
 
 Actualiza tu `.env.gcloud.local` con la `DATABASE_URL` mostrada y un valor seguro para `JWT_SECRET`.
 
-### 4. Construir la imagen con Cloud Build
+### 4. Configurar secretos para Cloud Build y Secret Manager
+```bash
+# (Opcional) Consulta los secretos existentes
+gcloud secrets list --filter="name:library-database-url OR name:library-jwt-secret" --project "$PROJECT_ID"
+
+# Crea los secretos si no existen todavía
+printf '%s' "$DATABASE_URL" | gcloud secrets create library-database-url \
+  --data-file=- \
+  --replication-policy="automatic" \
+  --project "$PROJECT_ID"
+
+printf '%s' "$JWT_SECRET" | gcloud secrets create library-jwt-secret \
+  --data-file=- \
+  --replication-policy="automatic" \
+  --project "$PROJECT_ID"
+
+# Recupera el número del proyecto para referenciar la cuenta de Cloud Build
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+
+# Concede el rol Secret Manager Secret Accessor a Cloud Build sobre ambos secretos
+gcloud secrets add-iam-policy-binding library-database-url \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" \
+  --project "$PROJECT_ID"
+
+gcloud secrets add-iam-policy-binding library-jwt-secret \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" \
+  --project "$PROJECT_ID"
+
+# Actualiza las sustituciones del trigger o del comando manual
+gcloud builds submit \
+  --config cloudbuild.yaml \
+  --project "$PROJECT_ID" \
+  --substitutions=_DATABASE_URL="projects/$PROJECT_ID/secrets/library-database-url/versions/latest",_JWT_SECRET="projects/$PROJECT_ID/secrets/library-jwt-secret/versions/latest"
+```
+
+> ✅ Cuando revises los logs de Cloud Build, confirma que el paso **Validación de variables obligatorias** aparezca como "done" antes del despliegue. Si falla, vuelve a verificar los valores guardados en Secret Manager y los permisos asignados a la cuenta de Cloud Build.
+
+### 5. Construir la imagen con Cloud Build
 ```bash
 gcloud builds submit   --config cloudbuild.yaml   --project "$PROJECT_ID"   --substitutions=_DATABASE_URL="$DATABASE_URL",_JWT_SECRET="$JWT_SECRET"
 ```
 
 El pipeline usa `corepack pnpm` (igual que el Dockerfile) y publica la imagen en Artifact Registry antes de desplegarla.
 
-### 5. Desplegar en Cloud Run con Cloud SQL adjunto
+### 6. Desplegar en Cloud Run con Cloud SQL adjunto
 ```bash
 gcloud run deploy library-management-system   --image us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system:latest   --region us-central1   --allow-unauthenticated   --add-cloudsql-instances $PROJECT_ID:us-central1:library-db-instance   --set-env-vars DATABASE_URL="$DATABASE_URL",JWT_SECRET="$JWT_SECRET",NODE_ENV=production,PORT=8080   --project "$PROJECT_ID"
 ```
 
-### 6. Ejecutar migraciones y seed con un Cloud Run Job
+### 7. Ejecutar migraciones y seed con un Cloud Run Job
 ```bash
 # Crear el job la primera vez
 gcloud run jobs create library-management-system-db-setup   --image us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system:latest   --region us-central1   --add-cloudsql-instances $PROJECT_ID:us-central1:library-db-instance   --set-env-vars DATABASE_URL="$DATABASE_URL",JWT_SECRET="$JWT_SECRET",NODE_ENV=production   --command sh   --args -c   --args "pnpm prisma migrate deploy && pnpm prisma seed"   --project "$PROJECT_ID"
@@ -224,7 +263,7 @@ gcloud run jobs execute library-management-system-db-setup   --region us-central
 ```
 > ✅ Los scripts de `scripts/setup-gcp.sh` y `scripts/deploy-cloud-run.sh` siguen estos mismos pasos y parámetros. Úsalos cuando quieras automatizar el proceso completo.
 
-### 7. Restaurar el comando por defecto y validar la salud del servicio
+### 8. Restaurar el comando por defecto y validar la salud del servicio
 
 Cuando Cloud Run conserva un comando personalizado (`ENTRYPOINT`) diferente al definido en el Dockerfile, el contenedor puede iniciar con parámetros incorrectos. El script `scripts/reset-cloud-run-backend.sh` ejecuta el flujo completo para limpiar el comando sobrescrito, desplegar la última imagen y validar la salud del servicio en un solo paso.
 
