@@ -15,9 +15,7 @@ RUN pnpm install --frozen-lockfile
 # Install only production dependencies for the runtime image
 FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml* ./
-COPY prisma ./prisma
 RUN pnpm install --frozen-lockfile \
-  && pnpm prisma generate \
   && pnpm prune --prod
 
 # Rebuild the source code only when needed
