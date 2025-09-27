@@ -25,9 +25,6 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
-RUN pnpm prisma generate
-
 # Build the application
 RUN pnpm run build
 
@@ -43,10 +40,7 @@ RUN addgroup --system --gid 1001 nodejs \
 # Copy built application
 COPY --from=builder /app/dist ./dist
 COPY --from=prod-deps /app/node_modules ./node_modules
-RUN mkdir -p node_modules/.prisma
-COPY --from=prod-deps /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/prisma ./prisma
 
 # Change ownership to nestjs user
 RUN chown -R nestjs:nodejs /app
