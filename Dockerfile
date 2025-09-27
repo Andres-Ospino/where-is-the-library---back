@@ -3,7 +3,7 @@ FROM node:18-alpine3.18 AS base
 
 RUN apk add --no-cache libc6-compat openssl openssl1.1-compat \
   && corepack enable \
-  && npm install -g pnpm@9.12.x
+  && corepack prepare pnpm@9.12.x --activate
 
 WORKDIR /app
 
