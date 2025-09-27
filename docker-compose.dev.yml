@@ -1,25 +1,16 @@
 version: '3.8'
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: library_app_dev
-    command: pnpm run dev
-    ports:
-      - "3000:3000"
+  postgres:
+    image: postgres:15-alpine
+    container_name: library_postgres_dev
     environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - JWT_SECRET=dev-secret
+      POSTGRES_DB: library_db
+      POSTGRES_USER: library_user
+      POSTGRES_PASSWORD: library_password
+    ports:
+      - "5432:5432"
     volumes:
-<<<<<<< HEAD
-      - .:/app
-      - /app/node_modules
-    networks:
-      - library_dev_network
-=======
       - postgres_dev_data:/var/lib/postgresql/data
       - ./scripts/init-database.sql:/docker-entrypoint-initdb.d/init-database.sql
     healthcheck:
@@ -29,6 +20,7 @@ services:
       retries: 5
     networks:
       - library_dev_network
+    restart: unless-stopped
 
   app:
     build:
@@ -52,10 +44,10 @@ services:
         condition: service_healthy
     networks:
       - library_dev_network
+    restart: unless-stopped
 
 volumes:
   postgres_dev_data:
->>>>>>> origin/codex/remove-prisma-ldugxq
 
 networks:
   library_dev_network:

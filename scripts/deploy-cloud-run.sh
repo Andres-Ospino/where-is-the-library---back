@@ -31,14 +31,11 @@ JWT_SECRET=${JWT_SECRET:-""}
 DATABASE_URL=${DATABASE_URL:-""}
 INSTANCE_NAME=${INSTANCE_NAME:-""}
 
-<<<<<<< HEAD
-=======
 if [[ -z "${DATABASE_URL}" ]]; then
   echo "❌ Debes definir DATABASE_URL en el entorno (por ejemplo en .env.gcloud.local)."
   exit 1
 fi
 
->>>>>>> origin/codex/remove-prisma-ldugxq
 if [[ "${JWT_SECRET}" == "define-un-secreto-robusto" || -z "${JWT_SECRET}" ]]; then
   echo "❌ Debes definir JWT_SECRET en el entorno (por ejemplo en .env.gcloud.local)."
   exit 1
@@ -61,17 +58,6 @@ echo "🏗️ Construyendo imagen con Cloud Build..."
 gcloud builds submit \
   --config cloudbuild.yaml \
   --project "${PROJECT_ID}" \
-<<<<<<< HEAD
-  --substitutions=_SERVICE_NAME="${SERVICE_NAME}",_REGION="${REGION}",_ARTIFACT_REPOSITORY="${ARTIFACT_REPOSITORY}",_IMAGE_TAG="${IMAGE_TAG}",_JWT_SECRET="${JWT_SECRET}"
-
-echo "🚢 Desplegando servicio en Cloud Run..."
-gcloud run deploy "${SERVICE_NAME}" \
-  --image "${IMAGE_URI}" \
-  --region "${REGION}" \
-  --allow-unauthenticated \
-  --platform managed \
-  --set-env-vars "NODE_ENV=production,PORT=8080,JWT_SECRET=${JWT_SECRET}" \
-=======
   --substitutions=_SERVICE_NAME="${SERVICE_NAME}",_REGION="${REGION}",_ARTIFACT_REPOSITORY="${ARTIFACT_REPOSITORY}",_IMAGE_TAG="${IMAGE_TAG}",_JWT_SECRET="${JWT_SECRET}",_DATABASE_URL="${DATABASE_URL}"
 
 echo "🚢 Desplegando servicio en Cloud Run..."
@@ -82,7 +68,6 @@ DEPLOY_ARGS=(
   --allow-unauthenticated
   --platform managed
   --set-env-vars "NODE_ENV=production,PORT=8080,JWT_SECRET=${JWT_SECRET},DATABASE_URL=${DATABASE_URL}"
->>>>>>> origin/codex/remove-prisma-ldugxq
   --project "${PROJECT_ID}"
 )
 if [[ -n "${INSTANCE_NAME}" ]]; then
