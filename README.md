@@ -152,30 +152,77 @@ docker-compose up -d
 
 ## ☁️ Google Cloud Deployment
 
-### 1. Setup GCP Resources
-\`\`\`bash
-# Make script executable and run
-chmod +x scripts/setup-gcp.sh
-./scripts/setup-gcp.sh your-project-id
-\`\`\`
+Esta guía unificada describe los pasos necesarios para desplegar la API en Google Cloud Run usando Cloud SQL y Artifact Registry. Puedes automatizar varias tareas con los scripts `scripts/setup-gcp.sh` y `scripts/deploy-cloud-run.sh`, pero aquí se detalla todo el proceso para que puedas verificar cada punto.
 
-### 2. Deploy to Cloud Run
-\`\`\`bash
-# Make script executable and run
-chmod +x scripts/deploy-cloud-run.sh
-./scripts/deploy-cloud-run.sh your-project-id
-\`\`\`
+> 📄 Copia el archivo `.env.gcloud` incluido en el repositorio y actualiza sus valores antes de ejecutar los comandos:
+> ```bash
+> cp .env.gcloud .env.gcloud.local
+> # Edita .env.gcloud.local para establecer PROJECT_ID, DATABASE_URL, JWT_SECRET, etc.
+> source .env.gcloud.local
+> ```
 
-### 3. Environment Variables for Cloud Run
-Set these in Google Cloud Console or via gcloud CLI:
+### 1. Preparar la configuración del proyecto y Artifact Registry
+```bash
+# Define el proyecto y la región por defecto
+gcloud config set project "$PROJECT_ID"
+gcloud config set run/region us-central1
 
-\`\`\`bash
-DATABASE_URL="postgresql://user:password@/database?host=/cloudsql/project:region:instance"
-JWT_SECRET="your-secure-jwt-secret"
-NODE_ENV="production"
-PORT="8080"
-\`\`\`
+# Habilita la autenticación de Artifact Registry en la región
+gcloud auth configure-docker us-central1-docker.pkg.dev
 
+# Crea (una sola vez) el repositorio Docker en Artifact Registry
+gcloud artifacts repositories create library-management-system   --repository-format=docker   --location=us-central1   --description="Library Management System images"   --project "$PROJECT_ID"
+```
+
+> ℹ️ El repositorio y la imagen utilizados en toda la guía son `us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system`.
+
+### 2. Aprovisionar Cloud SQL (PostgreSQL)
+```bash
+# Activa las APIs necesarias
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com   artifactregistry.googleapis.com sqladmin.googleapis.com   --project "$PROJECT_ID"
+
+# Crea la instancia de Cloud SQL (edición ENTERPRISE obligatoria para el tier utilizado)
+gcloud sql instances create library-db-instance   --database-version=POSTGRES_15   --edition=ENTERPRISE   --tier=db-custom-1-3840   --storage-size=10   --region=us-central1   --project "$PROJECT_ID"
+```
+
+### 3. Crear base de datos y usuario de aplicación
+```bash
+# Base de datos de la aplicación
+gcloud sql databases create library_db   --instance=library-db-instance   --project "$PROJECT_ID"
+
+# Usuario dedicado con contraseña generada
+DB_PASSWORD=$(openssl rand -base64 32)
+gcloud sql users create library_user   --instance=library-db-instance   --password="$DB_PASSWORD"   --project "$PROJECT_ID"
+
+echo "DATABASE_URL=postgresql://library_user:$DB_PASSWORD@/library_db?host=/cloudsql/$PROJECT_ID:us-central1:library-db-instance"
+```
+
+Actualiza tu `.env.gcloud.local` con la `DATABASE_URL` mostrada y un valor seguro para `JWT_SECRET`.
+
+### 4. Construir la imagen con Cloud Build
+```bash
+gcloud builds submit   --config cloudbuild.yaml   --project "$PROJECT_ID"   --substitutions=_DATABASE_URL="$DATABASE_URL",_JWT_SECRET="$JWT_SECRET"
+```
+
+El pipeline usa `corepack pnpm` (igual que el Dockerfile) y publica la imagen en Artifact Registry antes de desplegarla.
+
+### 5. Desplegar en Cloud Run con Cloud SQL adjunto
+```bash
+gcloud run deploy library-management-system   --image us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system:latest   --region us-central1   --allow-unauthenticated   --add-cloudsql-instances $PROJECT_ID:us-central1:library-db-instance   --set-env-vars DATABASE_URL="$DATABASE_URL",JWT_SECRET="$JWT_SECRET",NODE_ENV=production,PORT=8080   --project "$PROJECT_ID"
+```
+
+### 6. Ejecutar migraciones y seed con un Cloud Run Job
+```bash
+# Crear el job la primera vez
+gcloud run jobs create library-management-system-db-setup   --image us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system:latest   --region us-central1   --add-cloudsql-instances $PROJECT_ID:us-central1:library-db-instance   --set-env-vars DATABASE_URL="$DATABASE_URL",JWT_SECRET="$JWT_SECRET",NODE_ENV=production   --command sh   --args -c   --args "pnpm prisma migrate deploy && pnpm prisma seed"   --project "$PROJECT_ID"
+
+# Para actualizarlo tras cambios en la imagen
+gcloud run jobs update library-management-system-db-setup   --image us-central1-docker.pkg.dev/$PROJECT_ID/library-management-system/library-management-system:latest   --region us-central1   --add-cloudsql-instances $PROJECT_ID:us-central1:library-db-instance   --set-env-vars DATABASE_URL="$DATABASE_URL",JWT_SECRET="$JWT_SECRET",NODE_ENV=production   --command sh   --args -c   --args "pnpm prisma migrate deploy && pnpm prisma seed"   --project "$PROJECT_ID"
+
+# Ejecuta el job tras desplegar cambios de base de datos
+gcloud run jobs execute library-management-system-db-setup   --region us-central1   --project "$PROJECT_ID"
+```
+> ✅ Los scripts de `scripts/setup-gcp.sh` y `scripts/deploy-cloud-run.sh` siguen estos mismos pasos y parámetros. Úsalos cuando quieras automatizar el proceso completo.
 ## 🔧 Database Management
 
 \`\`\`bash
