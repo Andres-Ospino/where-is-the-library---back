@@ -11,12 +11,17 @@ import { MEMBER_REPOSITORY_TOKEN } from "@/modules/members/domain/ports/member-r
 import { InMemoryMemberRepository } from "@/modules/members/infrastructure/repositories/in-memory-member.repository"
 import { LOAN_REPOSITORY_TOKEN } from "@/modules/loans/domain/ports/loan-repository.port"
 import { InMemoryLoanRepository } from "@/modules/loans/infrastructure/repositories/in-memory-loan.repository"
+import { Member } from "@/modules/members/domain/entities/member.entity"
+import { HASHING_SERVICE_TOKEN, type HashingPort } from "@/modules/shared/ports/hashing.port"
 
 describe("Books (e2e)", () => {
   let app: INestApplication
   let bookRepository: InMemoryBookRepository
   let memberRepository: InMemoryMemberRepository
   let loanRepository: InMemoryLoanRepository
+  let hashingService: HashingPort
+  let authToken: string
+  const memberPassword = "Password123!"
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -32,12 +37,25 @@ describe("Books (e2e)", () => {
     loanRepository = app.get(LOAN_REPOSITORY_TOKEN) as InMemoryLoanRepository
 
     await app.init()
+
+    hashingService = app.get(HASHING_SERVICE_TOKEN) as HashingPort
   })
 
   beforeEach(async () => {
     loanRepository.clear()
     bookRepository.clear()
     memberRepository.clear()
+
+    const passwordHash = await hashingService.hash(memberPassword)
+    await memberRepository.save(Member.create("Test User", "user@example.com", passwordHash))
+
+    const loginResponse = await request(app.getHttpServer())
+      .post("/auth/login")
+      .send({ email: "user@example.com", password: memberPassword })
+
+    expect(loginResponse.status).toBe(201)
+    authToken = loginResponse.body.accessToken
+    expect(authToken).toBeDefined()
   })
 
   afterAll(async () => {
@@ -48,6 +66,7 @@ describe("Books (e2e)", () => {
     it("should create a new book", async () => {
       const response = await request(app.getHttpServer())
         .post("/books")
+        .set("Authorization", `Bearer ${authToken}`)
         .send({
           title: "The Great Gatsby",
           author: "F. Scott Fitzgerald",
@@ -62,6 +81,7 @@ describe("Books (e2e)", () => {
     it("should return 400 for invalid data", async () => {
       const response = await request(app.getHttpServer())
         .post("/books")
+        .set("Authorization", `Bearer ${authToken}`)
         .send({
           title: "",
           author: "F. Scott Fitzgerald",
@@ -80,7 +100,9 @@ describe("Books (e2e)", () => {
     })
 
     it("should return all books", async () => {
-      const response = await request(app.getHttpServer()).get("/books")
+      const response = await request(app.getHttpServer())
+        .get("/books")
+        .set("Authorization", `Bearer ${authToken}`)
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(2)
@@ -91,7 +113,9 @@ describe("Books (e2e)", () => {
     })
 
     it("should filter books by title", async () => {
-      const response = await request(app.getHttpServer()).get("/books?title=Book 1")
+      const response = await request(app.getHttpServer())
+        .get("/books?title=Book 1")
+        .set("Authorization", `Bearer ${authToken}`)
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(1)
@@ -110,6 +134,7 @@ describe("Books (e2e)", () => {
     it("should update a book", async () => {
       const response = await request(app.getHttpServer())
         .patch(`/books/${bookId}`)
+        .set("Authorization", `Bearer ${authToken}`)
         .send({
           title: "Updated Title",
           author: "Updated Author",
@@ -122,6 +147,7 @@ describe("Books (e2e)", () => {
     it("should return 404 for non-existent book", async () => {
       const response = await request(app.getHttpServer())
         .patch("/books/999")
+        .set("Authorization", `Bearer ${authToken}`)
         .send({
           title: "Updated Title",
           author: "Updated Author",
@@ -139,14 +165,18 @@ describe("Books (e2e)", () => {
     })
 
     it("should delete a book", async () => {
-      const response = await request(app.getHttpServer()).delete(`/books/${bookId}`)
+      const response = await request(app.getHttpServer())
+        .delete(`/books/${bookId}`)
+        .set("Authorization", `Bearer ${authToken}`)
 
       expect(response.status).toBe(200)
       expect(response.body.message).toBe("Book deleted successfully")
     })
 
     it("should return 404 for non-existent book", async () => {
-      const response = await request(app.getHttpServer()).delete("/books/999")
+      const response = await request(app.getHttpServer())
+        .delete("/books/999")
+        .set("Authorization", `Bearer ${authToken}`)
 
       expect(response.status).toBe(404)
     })

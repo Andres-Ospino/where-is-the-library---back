@@ -42,6 +42,11 @@ async function bootstrap() {
     .setTitle("Library Management API")
     .setDescription("API documentation for the library management system")
     .setVersion("1.0.0")
+    .addBearerAuth({
+      type: "http",
+      scheme: "bearer",
+      bearerFormat: "JWT",
+    })
     .build()
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig)
 
