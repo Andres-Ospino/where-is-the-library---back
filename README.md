@@ -223,6 +223,28 @@ gcloud run jobs update library-management-system-db-setup   --image us-central1-
 gcloud run jobs execute library-management-system-db-setup   --region us-central1   --project "$PROJECT_ID"
 ```
 > ✅ Los scripts de `scripts/setup-gcp.sh` y `scripts/deploy-cloud-run.sh` siguen estos mismos pasos y parámetros. Úsalos cuando quieras automatizar el proceso completo.
+
+### 7. Restaurar el comando por defecto y validar la salud del servicio
+
+Cuando Cloud Run conserva un comando personalizado (`ENTRYPOINT`) diferente al definido en el Dockerfile, el contenedor puede iniciar con parámetros incorrectos. El script `scripts/reset-cloud-run-backend.sh` ejecuta el flujo completo para limpiar el comando sobrescrito, desplegar la última imagen y validar la salud del servicio en un solo paso.
+
+```bash
+# Limpia overrides, redeploya con el pipeline existente y ejecuta la sonda /health
+scripts/reset-cloud-run-backend.sh \
+  --project where-is-the-library \
+  --region us-central1 \
+  --service backend
+
+# Si necesitas una URL distinta para la sonda, añade --health-url "https://<url-personalizada>/health"
+```
+
+El script realiza las siguientes acciones:
+
+1. Confirma que el servicio exista antes de modificarlo.
+2. Ejecuta `gcloud run services update --clear-command --clear-args` para eliminar cualquier override manual.
+3. Vuelve a desplegar utilizando `scripts/deploy-cloud-run.sh` (o `gcloud builds submit` si el script no está disponible).
+4. Comprueba que la revisión activa muestre el campo **Comando** vacío en la configuración del contenedor.
+5. Obtiene la URL pública del servicio y lanza `curl .../health` para asegurarse de que NestJS responde escuchando en el puerto 8080.
 ## 🔧 Database Management
 
 \`\`\`bash
