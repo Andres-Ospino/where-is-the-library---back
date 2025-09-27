@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src"
+  },
+  "exclude": [
+    "test/**/*",
+    "scripts/**/*",
+    "prisma/**/*",
+    "docker-compose*.yml",
+    "cloudbuild.yaml",
+    "jest.config.js"
+  ]
+}
