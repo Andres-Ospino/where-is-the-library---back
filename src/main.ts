@@ -1,12 +1,24 @@
-import { NestFactory } from "@nestjs/core"
+import { join } from "node:path"
+
 import { ValidationPipe } from "@nestjs/common"
-import { Logger } from "nestjs-pino"
-import { AppModule } from "./app.module"
-import { GlobalExceptionFilter } from "@/core/filters/global-exception.filter"
+import { NestFactory } from "@nestjs/core"
+import { NestExpressApplication } from "@nestjs/platform-express"
+import type { Request, Response } from "express"
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
+import * as OpenApiToPostman from "openapi-to-postmanv2"
+import { Logger } from "nestjs-pino"
+
+import { GlobalExceptionFilter } from "@/core/filters/global-exception.filter"
+import { AppModule } from "./app.module"
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true })
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  })
+
+  app.useStaticAssets(join(process.cwd(), "public"), {
+    prefix: "/swagger-static/",
+  })
 
   // Use Pino logger
   // The original code had a linting error here. Moving app.get(Logger) outside of app.useLogger fixes it.
@@ -32,7 +44,59 @@ async function bootstrap() {
     .setVersion("1.0.0")
     .build()
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig)
+
+  const httpServer = app.getHttpAdapter().getInstance()
+  httpServer.get("/postman-collection", (_req: Request, res: Response) => {
+    OpenApiToPostman.convert(
+      { type: "json", data: swaggerDocument },
+      { folderStrategy: "Tags" },
+      (error, conversion) => {
+        if (error || !conversion?.result) {
+          logger.error(
+            `No se pudo convertir el documento OpenAPI a Postman: ${
+              error?.message ?? conversion?.reason ?? "resultado inválido"
+            }`,
+          )
+          res.status(500).json({ message: "No se pudo generar la colección de Postman." })
+          return
+        }
+
+        const postmanCollection = conversion.output?.[0]?.data
+
+        if (!postmanCollection) {
+          logger.error("La conversión de OpenAPI a Postman no devolvió datos.")
+          res.status(500).json({ message: "No se pudo generar la colección de Postman." })
+          return
+        }
+
+        res.header("Content-Type", "application/json; charset=utf-8")
+        res.header(
+          "Content-Disposition",
+          'attachment; filename="library-management.postman_collection.json"',
+        )
+        res.send(JSON.stringify(postmanCollection, null, 2))
+      },
+    )
+  })
+
   SwaggerModule.setup("/", app, swaggerDocument, {
+    customCss: `
+      #download-postman-button {
+        margin-left: 1rem;
+        background-color: #2563eb;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        cursor: pointer;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+      }
+
+      #download-postman-button:hover {
+        background-color: #1d4ed8;
+      }
+    `,
+    customJs: ["/swagger-static/swagger-custom.js"],
     swaggerOptions: {
       persistAuthorization: true,
       displayRequestDuration: true,
