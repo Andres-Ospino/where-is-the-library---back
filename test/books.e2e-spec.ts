@@ -11,12 +11,18 @@ import { type BookRepositoryPort, BOOK_REPOSITORY_TOKEN } from "@/modules/catalo
 import { LoanOrmEntity } from "@/modules/loans/infrastructure/persistence/typeorm/loan.orm-entity"
 import { BookOrmEntity } from "@/modules/catalog/infrastructure/persistence/typeorm/book.orm-entity"
 import { MemberOrmEntity } from "@/modules/members/infrastructure/persistence/typeorm/member.orm-entity"
+import { AuthAccountOrmEntity } from "@/modules/auth-accounts/infrastructure/persistence/typeorm/auth-account.orm-entity"
+import { AUTH_ACCOUNT_REPOSITORY_TOKEN, type AuthAccountRepositoryPort } from "@/modules/auth-accounts/domain/ports/auth-account-repository.port"
+import { AuthAccount } from "@/modules/auth-accounts/domain/entities/auth-account.entity"
+import { HASHING_SERVICE_TOKEN, type HashingPort } from "@/modules/shared/ports/hashing.port"
 
 describe("Books (e2e)", () => {
   let app: INestApplication
   let bookRepository: BookRepositoryPort
   let dataSource: DataSource
   let authToken: string
+  let authAccountRepository: AuthAccountRepositoryPort
+  let hashingService: HashingPort
 
   const memberCredentials = {
     name: "Test User",
@@ -35,6 +41,8 @@ describe("Books (e2e)", () => {
 
     bookRepository = app.get(BOOK_REPOSITORY_TOKEN) as BookRepositoryPort
     dataSource = app.get(DataSource)
+    authAccountRepository = app.get(AUTH_ACCOUNT_REPOSITORY_TOKEN) as AuthAccountRepositoryPort
+    hashingService = app.get(HASHING_SERVICE_TOKEN) as HashingPort
 
     await app.init()
   })
@@ -43,9 +51,15 @@ describe("Books (e2e)", () => {
     await dataSource.getRepository(LoanOrmEntity).clear()
     await dataSource.getRepository(BookOrmEntity).clear()
     await dataSource.getRepository(MemberOrmEntity).clear()
+    await dataSource.getRepository(AuthAccountOrmEntity).clear()
 
-    const memberResponse = await request(app.getHttpServer()).post("/members").send(memberCredentials)
+    const memberResponse = await request(app.getHttpServer())
+      .post("/members")
+      .send({ name: memberCredentials.name, email: memberCredentials.email })
     expect(memberResponse.status).toBe(201)
+
+    const passwordHash = await hashingService.hash(memberCredentials.password)
+    await authAccountRepository.save(AuthAccount.create(memberCredentials.email, passwordHash))
 
     const loginResponse = await request(app.getHttpServer()).post("/auth/login").send({
       email: memberCredentials.email,

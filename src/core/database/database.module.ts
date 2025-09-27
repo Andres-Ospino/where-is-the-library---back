@@ -4,11 +4,12 @@ import { TypeOrmModule, type TypeOrmModuleOptions } from "@nestjs/typeorm"
 import { BookOrmEntity } from "@/modules/catalog/infrastructure/persistence/typeorm/book.orm-entity"
 import { MemberOrmEntity } from "@/modules/members/infrastructure/persistence/typeorm/member.orm-entity"
 import { LoanOrmEntity } from "@/modules/loans/infrastructure/persistence/typeorm/loan.orm-entity"
+import { AuthAccountOrmEntity } from "@/modules/auth-accounts/infrastructure/persistence/typeorm/auth-account.orm-entity"
 import { cloudSqlDefaults } from "@/config/cloudsql.config"
 
 function buildTypeOrmOptions(configService: ConfigService): TypeOrmModuleOptions {
   const nodeEnv = configService.get<string>("NODE_ENV")
-  const entities = [BookOrmEntity, MemberOrmEntity, LoanOrmEntity]
+  const entities = [BookOrmEntity, MemberOrmEntity, LoanOrmEntity, AuthAccountOrmEntity]
 
   if (nodeEnv === "test") {
     return {

@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config"
 import { APP_GUARD } from "@nestjs/core"
 
 import { MembersModule } from "@/modules/members/members.module"
+import { AuthAccountsModule } from "@/modules/auth-accounts/auth-accounts.module"
 import { LoginUseCase } from "@/modules/auth/application/use-cases/login.use-case"
 import { AuthController } from "@/modules/auth/infrastructure/controllers/auth.controller"
 import { JwtStrategy } from "@/modules/auth/infrastructure/strategies/jwt.strategy"
@@ -24,6 +25,7 @@ import { JwtAuthGuard } from "@/modules/auth/infrastructure/guards/jwt-auth.guar
       inject: [ConfigService],
     }),
     MembersModule,
+    AuthAccountsModule,
   ],
   controllers: [AuthController],
   providers: [

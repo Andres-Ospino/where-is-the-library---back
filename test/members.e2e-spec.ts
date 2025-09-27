@@ -38,7 +38,6 @@ describe("Members (e2e)", () => {
     const response = await request(app.getHttpServer()).post("/members").send({
       name: "Ada Lovelace",
       email: "ada@example.com",
-      password: "Password123!",
     })
 
     expect(response.status).toBe(201)
@@ -55,7 +54,6 @@ describe("Members (e2e)", () => {
     const response = await request(app.getHttpServer()).post("/members").send({
       name: "",
       email: "not-an-email",
-      password: "short",
     })
 
     expect(response.status).toBe(400)

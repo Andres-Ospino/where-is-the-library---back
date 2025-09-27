@@ -1,8 +1,9 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common"
 import { JwtService } from "@nestjs/jwt"
 
-import { MEMBER_REPOSITORY_TOKEN, type MemberRepositoryPort } from "@/modules/members/domain/ports/member-repository.port"
 import { HASHING_SERVICE_TOKEN, type HashingPort } from "@/modules/shared/ports/hashing.port"
+import { AUTH_ACCOUNT_REPOSITORY_TOKEN, type AuthAccountRepositoryPort } from "@/modules/auth-accounts/domain/ports/auth-account-repository.port"
+import { FindMemberByEmailUseCase } from "@/modules/members/application/use-cases/find-member-by-email.use-case"
 
 export interface LoginCommand {
   email: string
@@ -18,21 +19,27 @@ export interface LoginResult {
 @Injectable()
 export class LoginUseCase {
   constructor(
-    @Inject(MEMBER_REPOSITORY_TOKEN)
-    private readonly memberRepository: MemberRepositoryPort,
+    @Inject(AUTH_ACCOUNT_REPOSITORY_TOKEN)
+    private readonly authAccountRepository: AuthAccountRepositoryPort,
     private readonly jwtService: JwtService,
     @Inject(HASHING_SERVICE_TOKEN)
     private readonly hashingService: HashingPort,
+    private readonly findMemberByEmailUseCase: FindMemberByEmailUseCase,
   ) {}
 
   async execute(command: LoginCommand): Promise<LoginResult> {
-    const member = await this.memberRepository.findByEmail(command.email)
-    if (!member) {
+    const authAccount = await this.authAccountRepository.findByEmail(command.email)
+    if (!authAccount) {
       throw new UnauthorizedException("Invalid credentials")
     }
 
-    const isValidPassword = await this.hashingService.compare(command.password, member.passwordHash)
+    const isValidPassword = await this.hashingService.compare(command.password, authAccount.passwordHash)
     if (!isValidPassword) {
+      throw new UnauthorizedException("Invalid credentials")
+    }
+
+    const member = await this.findMemberByEmailUseCase.execute(command.email)
+    if (!member) {
       throw new UnauthorizedException("Invalid credentials")
     }
 

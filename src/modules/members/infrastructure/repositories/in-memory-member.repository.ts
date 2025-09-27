@@ -7,7 +7,6 @@ interface MemberRecord {
   id: number
   name: string
   email: string
-  passwordHash: string
 }
 
 @Injectable()
@@ -20,12 +19,11 @@ export class InMemoryMemberRepository implements MemberRepositoryPort {
       id: this.nextId++,
       name: member.name,
       email: member.email,
-      passwordHash: member.passwordHash,
     }
 
     this.members.push(record)
 
-    return Member.fromPersistence(record.id, record.name, record.email, record.passwordHash)
+    return Member.fromPersistence(record.id, record.name, record.email)
   }
 
   async findById(id: number): Promise<Member | null> {
@@ -34,14 +32,14 @@ export class InMemoryMemberRepository implements MemberRepositoryPort {
       return null
     }
 
-    return Member.fromPersistence(record.id, record.name, record.email, record.passwordHash)
+    return Member.fromPersistence(record.id, record.name, record.email)
   }
 
   async findAll(): Promise<Member[]> {
     return this.members
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((record) => Member.fromPersistence(record.id, record.name, record.email, record.passwordHash))
+      .map((record) => Member.fromPersistence(record.id, record.name, record.email))
   }
 
   async findByEmail(email: string): Promise<Member | null> {
@@ -50,7 +48,7 @@ export class InMemoryMemberRepository implements MemberRepositoryPort {
       return null
     }
 
-    return Member.fromPersistence(record.id, record.name, record.email, record.passwordHash)
+    return Member.fromPersistence(record.id, record.name, record.email)
   }
 
   async update(member: Member): Promise<Member> {
@@ -68,12 +66,11 @@ export class InMemoryMemberRepository implements MemberRepositoryPort {
       id,
       name: member.name,
       email: member.email,
-      passwordHash: member.passwordHash,
     }
 
     this.members[index] = updated
 
-    return Member.fromPersistence(updated.id, updated.name, updated.email, updated.passwordHash)
+    return Member.fromPersistence(updated.id, updated.name, updated.email)
   }
 
   async delete(id: number): Promise<void> {
