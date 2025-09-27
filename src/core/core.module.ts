@@ -1,10 +1,9 @@
 import { Global, Module } from "@nestjs/common"
-import { PrismaModule } from "./database/prisma.module"
 import { DateProviderModule } from "./providers/date-provider.module"
 
 @Global()
 @Module({
-  imports: [PrismaModule, DateProviderModule],
-  exports: [PrismaModule, DateProviderModule],
+  imports: [DateProviderModule],
+  exports: [DateProviderModule],
 })
 export class CoreModule {}
