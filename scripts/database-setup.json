@@ -1,14 +1,8 @@
 {
-<<<<<<< HEAD
-  "name": "Data Setup Guidance",
-  "description": "The application now relies on in-memory repositories, so no database setup commands are required.",
-  "scripts": {}
-=======
   "name": "PostgreSQL Setup",
   "description": "Pasos sugeridos para preparar la base de datos de PostgreSQL utilizada por TypeORM.",
   "scripts": {
     "docker": "docker compose -f docker-compose.dev.yml up -d postgres",
     "init": "psql postgresql://library_user:library_password@localhost:5432/library_db -f scripts/init-database.sql"
   }
->>>>>>> origin/codex/remove-prisma-ldugxq
 }

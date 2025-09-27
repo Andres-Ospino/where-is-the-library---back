@@ -1,8 +1,6 @@
 version: '3.8'
 
 services:
-<<<<<<< HEAD
-=======
   postgres:
     image: postgres:15-alpine
     container_name: library_postgres
@@ -24,7 +22,6 @@ services:
       - library_network
     restart: unless-stopped
 
->>>>>>> origin/codex/remove-prisma-ldugxq
   app:
     build:
       context: .
@@ -35,27 +32,19 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8080
-<<<<<<< HEAD
-      - JWT_SECRET=your-production-jwt-secret
-      - ALLOWED_ORIGINS=http://localhost:3000
-=======
       - DATABASE_URL=postgresql://library_user:library_password@postgres:5432/library_db
       - JWT_SECRET=your-production-jwt-secret
       - ALLOWED_ORIGINS=http://localhost:3000
     depends_on:
       postgres:
         condition: service_healthy
->>>>>>> origin/codex/remove-prisma-ldugxq
     networks:
       - library_network
     restart: unless-stopped
 
-<<<<<<< HEAD
-=======
 volumes:
   postgres_data:
 
->>>>>>> origin/codex/remove-prisma-ldugxq
 networks:
   library_network:
     driver: bridge

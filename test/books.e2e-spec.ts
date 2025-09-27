@@ -2,30 +2,12 @@ import { Test, type TestingModule } from "@nestjs/testing"
 import { type INestApplication, ValidationPipe } from "@nestjs/common"
 import * as request from "supertest"
 import { describe, expect, it, beforeEach, afterAll, beforeAll } from "@jest/globals"
+import { DataSource } from "typeorm"
+
 import { AppModule } from "@/app.module"
 import { GlobalExceptionFilter } from "@/core/filters/global-exception.filter"
 import { Book } from "@/modules/catalog/domain/entities/book.entity"
-<<<<<<< HEAD
-import { BOOK_REPOSITORY_TOKEN } from "@/modules/catalog/domain/ports/book-repository.port"
-import { InMemoryBookRepository } from "@/modules/catalog/infrastructure/repositories/in-memory-book.repository"
-import { MEMBER_REPOSITORY_TOKEN } from "@/modules/members/domain/ports/member-repository.port"
-import { InMemoryMemberRepository } from "@/modules/members/infrastructure/repositories/in-memory-member.repository"
-import { LOAN_REPOSITORY_TOKEN } from "@/modules/loans/domain/ports/loan-repository.port"
-import { InMemoryLoanRepository } from "@/modules/loans/infrastructure/repositories/in-memory-loan.repository"
-import { Member } from "@/modules/members/domain/entities/member.entity"
-import { HASHING_SERVICE_TOKEN, type HashingPort } from "@/modules/shared/ports/hashing.port"
-
-describe("Books (e2e)", () => {
-  let app: INestApplication
-  let bookRepository: InMemoryBookRepository
-  let memberRepository: InMemoryMemberRepository
-  let loanRepository: InMemoryLoanRepository
-  let hashingService: HashingPort
-  let authToken: string
-  const memberPassword = "Password123!"
-=======
 import { type BookRepositoryPort, BOOK_REPOSITORY_TOKEN } from "@/modules/catalog/domain/ports/book-repository.port"
-import { DataSource } from "typeorm"
 import { LoanOrmEntity } from "@/modules/loans/infrastructure/persistence/typeorm/loan.orm-entity"
 import { BookOrmEntity } from "@/modules/catalog/infrastructure/persistence/typeorm/book.orm-entity"
 import { MemberOrmEntity } from "@/modules/members/infrastructure/persistence/typeorm/member.orm-entity"
@@ -34,7 +16,13 @@ describe("Books (e2e)", () => {
   let app: INestApplication
   let bookRepository: BookRepositoryPort
   let dataSource: DataSource
->>>>>>> origin/codex/remove-prisma-ldugxq
+  let authToken: string
+
+  const memberCredentials = {
+    name: "Test User",
+    email: "user@example.com",
+    password: "Password123!",
+  }
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -45,41 +33,28 @@ describe("Books (e2e)", () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
     app.useGlobalFilters(new GlobalExceptionFilter())
 
-<<<<<<< HEAD
-    bookRepository = app.get(BOOK_REPOSITORY_TOKEN) as InMemoryBookRepository
-    memberRepository = app.get(MEMBER_REPOSITORY_TOKEN) as InMemoryMemberRepository
-    loanRepository = app.get(LOAN_REPOSITORY_TOKEN) as InMemoryLoanRepository
-=======
     bookRepository = app.get(BOOK_REPOSITORY_TOKEN) as BookRepositoryPort
     dataSource = app.get(DataSource)
->>>>>>> origin/codex/remove-prisma-ldugxq
 
     await app.init()
-
-    hashingService = app.get(HASHING_SERVICE_TOKEN) as HashingPort
   })
 
   beforeEach(async () => {
-<<<<<<< HEAD
-    loanRepository.clear()
-    bookRepository.clear()
-    memberRepository.clear()
+    await dataSource.getRepository(LoanOrmEntity).clear()
+    await dataSource.getRepository(BookOrmEntity).clear()
+    await dataSource.getRepository(MemberOrmEntity).clear()
 
-    const passwordHash = await hashingService.hash(memberPassword)
-    await memberRepository.save(Member.create("Test User", "user@example.com", passwordHash))
+    const memberResponse = await request(app.getHttpServer()).post("/members").send(memberCredentials)
+    expect(memberResponse.status).toBe(201)
 
-    const loginResponse = await request(app.getHttpServer())
-      .post("/auth/login")
-      .send({ email: "user@example.com", password: memberPassword })
+    const loginResponse = await request(app.getHttpServer()).post("/auth/login").send({
+      email: memberCredentials.email,
+      password: memberCredentials.password,
+    })
 
     expect(loginResponse.status).toBe(201)
     authToken = loginResponse.body.accessToken
     expect(authToken).toBeDefined()
-=======
-    await dataSource.getRepository(LoanOrmEntity).clear()
-    await dataSource.getRepository(BookOrmEntity).clear()
-    await dataSource.getRepository(MemberOrmEntity).clear()
->>>>>>> origin/codex/remove-prisma-ldugxq
   })
 
   afterAll(async () => {
@@ -95,6 +70,7 @@ describe("Books (e2e)", () => {
           title: "The Great Gatsby",
           author: "F. Scott Fitzgerald",
         })
+
       expect(response.status).toBe(201)
       expect(response.body).toHaveProperty("id")
       expect(response.body.title).toBe("The Great Gatsby")
@@ -124,13 +100,9 @@ describe("Books (e2e)", () => {
     })
 
     it("should return all books", async () => {
-<<<<<<< HEAD
       const response = await request(app.getHttpServer())
         .get("/books")
         .set("Authorization", `Bearer ${authToken}`)
-=======
-      const response = await request(app.getHttpServer()).get("/books")
->>>>>>> origin/codex/remove-prisma-ldugxq
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(2)
@@ -141,13 +113,9 @@ describe("Books (e2e)", () => {
     })
 
     it("should filter books by title", async () => {
-<<<<<<< HEAD
       const response = await request(app.getHttpServer())
         .get("/books?title=Book 1")
         .set("Authorization", `Bearer ${authToken}`)
-=======
-      const response = await request(app.getHttpServer()).get("/books?title=Book 1")
->>>>>>> origin/codex/remove-prisma-ldugxq
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(1)
@@ -171,6 +139,7 @@ describe("Books (e2e)", () => {
           title: "Updated Title",
           author: "Updated Author",
         })
+
       expect(response.status).toBe(200)
       expect(response.body.title).toBe("Updated Title")
       expect(response.body.author).toBe("Updated Author")
@@ -184,6 +153,7 @@ describe("Books (e2e)", () => {
           title: "Updated Title",
           author: "Updated Author",
         })
+
       expect(response.status).toBe(404)
     })
   })
@@ -197,26 +167,18 @@ describe("Books (e2e)", () => {
     })
 
     it("should delete a book", async () => {
-<<<<<<< HEAD
       const response = await request(app.getHttpServer())
         .delete(`/books/${bookId}`)
         .set("Authorization", `Bearer ${authToken}`)
-=======
-      const response = await request(app.getHttpServer()).delete(`/books/${bookId}`)
->>>>>>> origin/codex/remove-prisma-ldugxq
 
       expect(response.status).toBe(200)
       expect(response.body.message).toBe("Book deleted successfully")
     })
 
     it("should return 404 for non-existent book", async () => {
-<<<<<<< HEAD
       const response = await request(app.getHttpServer())
         .delete("/books/999")
         .set("Authorization", `Bearer ${authToken}`)
-=======
-      const response = await request(app.getHttpServer()).delete("/books/999")
->>>>>>> origin/codex/remove-prisma-ldugxq
 
       expect(response.status).toBe(404)
     })

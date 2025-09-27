@@ -13,6 +13,9 @@ export class MemberOrmEntity {
   @Column({ length: 255, unique: true })
   email!: string
 
+  @Column({ name: "password_hash", length: 255 })
+  passwordHash!: string
+
   @OneToMany(() => LoanOrmEntity, (loan) => loan.member)
   loans?: LoanOrmEntity[]
 
