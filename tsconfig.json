@@ -19,6 +19,15 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "types": ["jest", "node"],
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": {
+          "classValidatorShim": true,
+          "introspectComments": true
+        }
+      }
+    ],
     "paths": {
       "@/*": ["src/*"],
       "@/core/*": ["src/core/*"],
