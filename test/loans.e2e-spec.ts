@@ -12,6 +12,7 @@ import { MEMBER_REPOSITORY_TOKEN } from "@/modules/members/domain/ports/member-r
 import { InMemoryMemberRepository } from "@/modules/members/infrastructure/repositories/in-memory-member.repository"
 import { LOAN_REPOSITORY_TOKEN } from "@/modules/loans/domain/ports/loan-repository.port"
 import { InMemoryLoanRepository } from "@/modules/loans/infrastructure/repositories/in-memory-loan.repository"
+import { HASHING_SERVICE_TOKEN, type HashingPort } from "@/modules/shared/ports/hashing.port"
 
 describe("Loans (e2e)", () => {
   let app: INestApplication
@@ -20,6 +21,9 @@ describe("Loans (e2e)", () => {
   let loanRepository: InMemoryLoanRepository
   let bookId: number
   let memberId: number
+  let hashingService: HashingPort
+  let authToken: string
+  const memberPassword = "Password123!"
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -35,6 +39,8 @@ describe("Loans (e2e)", () => {
     loanRepository = app.get(LOAN_REPOSITORY_TOKEN) as InMemoryLoanRepository
 
     await app.init()
+
+    hashingService = app.get(HASHING_SERVICE_TOKEN) as HashingPort
   })
 
   beforeEach(async () => {
@@ -45,8 +51,17 @@ describe("Loans (e2e)", () => {
     const book = await bookRepository.save(Book.create("Test Book", "Test Author"))
     bookId = book.id as number
 
-    const member = await memberRepository.save(Member.create("John Doe", "john@example.com"))
+    const passwordHash = await hashingService.hash(memberPassword)
+    const member = await memberRepository.save(Member.create("John Doe", "john@example.com", passwordHash))
     memberId = member.id as number
+
+    const loginResponse = await request(app.getHttpServer())
+      .post("/auth/login")
+      .send({ email: "john@example.com", password: memberPassword })
+
+    expect(loginResponse.status).toBe(201)
+    authToken = loginResponse.body.accessToken
+    expect(authToken).toBeDefined()
   })
 
   afterAll(async () => {
@@ -57,6 +72,7 @@ describe("Loans (e2e)", () => {
     it("should create a new loan", async () => {
       const response = await request(app.getHttpServer())
         .post("/loans")
+        .set("Authorization", `Bearer ${authToken}`)
         .send({
           bookId,
           memberId,
@@ -71,6 +87,7 @@ describe("Loans (e2e)", () => {
     it("should return 404 for non-existent book", async () => {
       const response = await request(app.getHttpServer())
         .post("/loans")
+        .set("Authorization", `Bearer ${authToken}`)
         .send({
           bookId: 999,
           memberId,
@@ -82,6 +99,7 @@ describe("Loans (e2e)", () => {
     it("should return 404 for non-existent member", async () => {
       const response = await request(app.getHttpServer())
         .post("/loans")
+        .set("Authorization", `Bearer ${authToken}`)
         .send({
           bookId,
           memberId: 999,
@@ -106,7 +124,9 @@ describe("Loans (e2e)", () => {
     })
 
     it("should return a book", async () => {
-      const response = await request(app.getHttpServer()).post(`/loans/${loanId}/return`)
+      const response = await request(app.getHttpServer())
+        .post(`/loans/${loanId}/return`)
+        .set("Authorization", `Bearer ${authToken}`)
 
       expect(response.status).toBe(201)
       expect(response.body.isReturned).toBe(true)
@@ -114,7 +134,9 @@ describe("Loans (e2e)", () => {
     })
 
     it("should return 404 for non-existent loan", async () => {
-      const response = await request(app.getHttpServer()).post("/loans/999/return")
+      const response = await request(app.getHttpServer())
+        .post("/loans/999/return")
+        .set("Authorization", `Bearer ${authToken}`)
 
       expect(response.status).toBe(404)
     })
@@ -129,7 +151,9 @@ describe("Loans (e2e)", () => {
     })
 
     it("should return all loans", async () => {
-      const response = await request(app.getHttpServer()).get("/loans")
+      const response = await request(app.getHttpServer())
+        .get("/loans")
+        .set("Authorization", `Bearer ${authToken}`)
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(2)
       expect(response.body[0]).toHaveProperty("id")
@@ -138,7 +162,9 @@ describe("Loans (e2e)", () => {
     })
 
     it("should filter active loans only", async () => {
-      const response = await request(app.getHttpServer()).get("/loans?activeOnly=true")
+      const response = await request(app.getHttpServer())
+        .get("/loans?activeOnly=true")
+        .set("Authorization", `Bearer ${authToken}`)
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(1)
       expect(response.body[0].isReturned).toBe(false)

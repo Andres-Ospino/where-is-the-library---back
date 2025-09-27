@@ -29,6 +29,7 @@ src/
 - **Clean Architecture**: Domain-driven design with dependency inversion
 - **Domain Events**: Event-driven architecture for business events
 - **Comprehensive Testing**: Unit and end-to-end tests
+- **Token-based Authentication**: Secure JWT login and authorization guard ready for front-end integration
 - **Docker Support**: Containerized deployment
 - **Cloud Ready**: Google Cloud Run deployment configuration
 
@@ -87,8 +88,11 @@ Este proyecto utiliza **pnpm** como gestor de paquetes oficial. El contenedor Do
 - `DELETE /books/:id` - Delete book
 
 ### Members
-- `GET /members` - List all members
-- `POST /members` - Create a new member
+- `GET /members` - List all members (requires authentication)
+- `POST /members` - Create a new member (`name`, `email` and `password`)
+
+### Authentication
+- `POST /auth/login` - Exchange email/password for a JWT access token (`Authorization: Bearer <token>`)
 
 ### Loans
 - `GET /loans` - List loans (with optional filters)
