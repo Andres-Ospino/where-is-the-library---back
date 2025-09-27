@@ -1,9 +1,31 @@
-import { Controller, Get, Post, Body, Param, Query, BadRequestException, ParseIntPipe } from "@nestjs/common"
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  BadRequestException,
+  ParseIntPipe,
+} from "@nestjs/common"
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from "@nestjs/swagger"
 import { LoanBookUseCase } from "../../application/use-cases/loan-book.use-case"
 import { ReturnBookUseCase } from "../../application/use-cases/return-book.use-case"
 import { ListLoansUseCase } from "../../application/use-cases/list-loans.use-case"
 import { CreateLoanDto } from "@/modules/shared/dtos/create-loan.dto"
+import { LoanResponseDto } from "../dtos/loan-response.dto"
 
+@ApiTags("Préstamos")
+@ApiBearerAuth()
 @Controller("loans")
 export class LoansController {
   constructor(
@@ -13,38 +35,44 @@ export class LoansController {
   ) {}
 
   @Post()
-  async create(@Body() createLoanDto: CreateLoanDto) {
+  @ApiOperation({ summary: "Registrar un nuevo préstamo" })
+  @ApiCreatedResponse({ description: "Préstamo creado correctamente", type: LoanResponseDto })
+  @ApiBadRequestResponse({ description: "Datos de entrada inválidos" })
+  async create(@Body() createLoanDto: CreateLoanDto): Promise<LoanResponseDto> {
     const loan = await this.loanBookUseCase.execute({
       bookId: createLoanDto.bookId,
       memberId: createLoanDto.memberId,
-    });
+    })
 
-    return {
-      id: loan.id,
-      bookId: loan.bookId,
-      memberId: loan.memberId,
-      loanDate: loan.loanDate,
-      returnDate: loan.returnDate,
-      isReturned: loan.isReturned,
-    };
+    return LoanResponseDto.fromEntity(loan)
   }
 
-  @Post(':id/return')
-  async returnBook(@Param('id', ParseIntPipe) id: number) {
-    const loan = await this.returnBookUseCase.execute({ loanId: id });
+  @Post(":id/return")
+  @ApiOperation({ summary: "Registrar la devolución de un libro" })
+  @ApiParam({ name: "id", type: Number, description: "Identificador del préstamo" })
+  @ApiOkResponse({ description: "Préstamo actualizado", type: LoanResponseDto })
+  async returnBook(@Param("id", ParseIntPipe) id: number): Promise<LoanResponseDto> {
+    const loan = await this.returnBookUseCase.execute({ loanId: id })
 
-    return {
-      id: loan.id,
-      bookId: loan.bookId,
-      memberId: loan.memberId,
-      loanDate: loan.loanDate,
-      returnDate: loan.returnDate,
-      isReturned: loan.isReturned,
-    };
+    return LoanResponseDto.fromEntity(loan)
   }
 
   @Get()
-  async findAll(@Query('bookId') bookId?: string, @Query('memberId') memberId?: string, @Query('activeOnly') activeOnly?: string) {
+  @ApiOperation({ summary: "Listar préstamos" })
+  @ApiOkResponse({ description: "Listado de préstamos", type: LoanResponseDto, isArray: true })
+  @ApiQuery({ name: "bookId", required: false, description: "Filtra por libro" })
+  @ApiQuery({ name: "memberId", required: false, description: "Filtra por miembro" })
+  @ApiQuery({
+    name: "activeOnly",
+    required: false,
+    description: "Si es true solo muestra préstamos activos",
+  })
+  @ApiBadRequestResponse({ description: "Parámetros de consulta inválidos" })
+  async findAll(
+    @Query("bookId") bookId?: string,
+    @Query("memberId") memberId?: string,
+    @Query("activeOnly") activeOnly?: string,
+  ): Promise<LoanResponseDto[]> {
     const parsedBookId = bookId !== undefined ? Number.parseInt(bookId, 10) : undefined
     const parsedMemberId = memberId !== undefined ? Number.parseInt(memberId, 10) : undefined
 
@@ -58,13 +86,6 @@ export class LoansController {
       activeOnly: activeOnly === "true",
     })
 
-    return loans.map((loan) => ({
-      id: loan.id,
-      bookId: loan.bookId,
-      memberId: loan.memberId,
-      loanDate: loan.loanDate,
-      returnDate: loan.returnDate,
-      isReturned: loan.isReturned,
-    }))
+    return loans.map((loan) => LoanResponseDto.fromEntity(loan))
   }
 }
