@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from "@nestjs/common"
-import type { CreateBookUseCase } from "../../application/use-cases/create-book.use-case"
-import type { ListBooksUseCase } from "../../application/use-cases/list-books.use-case"
-import type { UpdateBookUseCase } from "../../application/use-cases/update-book.use-case"
-import type { RemoveBookUseCase } from "../../application/use-cases/remove-book.use-case"
+import { CreateBookUseCase } from "../../application/use-cases/create-book.use-case"
+import { ListBooksUseCase } from "../../application/use-cases/list-books.use-case"
+import { UpdateBookUseCase } from "../../application/use-cases/update-book.use-case"
+import { RemoveBookUseCase } from "../../application/use-cases/remove-book.use-case"
 import type { CreateBookDto } from "@/modules/shared/dtos/create-book.dto"
 import type { UpdateBookDto } from "@/modules/shared/dtos/update-book.dto"
 

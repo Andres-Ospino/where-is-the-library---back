@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common"
-import type { PrismaService } from "@/core/database/prisma.service"
+import { PrismaService } from "@/core/database/prisma.service"
 import { Member } from "../../domain/entities/member.entity"
 import type { MemberRepositoryPort } from "../../domain/ports/member-repository.port"
 

@@ -1,44 +1,101 @@
-# Google Cloud Build configuration
+# Google Cloud Build configuration para despliegue en Cloud Run
 steps:
-  # Build the Docker image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build',
-      '-t', 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA',
-      '-t', 'gcr.io/$PROJECT_ID/library-management-system:latest',
-      '.'
-    ]
+  # Validación rápida del lockfile usando pnpm (igual que en el Dockerfile)
+  - name: 'node:18'
+    entrypoint: sh
+    args:
+      - -c
+      - |
+        set -e
+        corepack enable
+        pnpm install --frozen-lockfile
 
-  # Push the Docker image to Container Registry
+  # Construcción de la imagen y publicación en Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA']
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:latest'
+      - '.'
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/library-management-system:latest']
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}'
 
-  # Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:latest'
+
+  # Validación de variables obligatorias
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args: [
-      'run', 'deploy', 'library-management-system',
-      '--image', 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA',
-      '--region', 'us-central1',
-      '--platform', 'managed',
-      '--allow-unauthenticated',
-      '--port', '8080',
-      '--memory', '512Mi',
-      '--cpu', '1',
-      '--max-instances', '10',
-      '--set-env-vars', 'NODE_ENV=production',
-      '--set-env-vars', 'PORT=8080'
-    ]
+    entrypoint: bash
+    secretEnv:
+      - DATABASE_URL
+      - JWT_SECRET
+    args:
+      - -c
+      - |
+        if [[ -z "${DATABASE_URL}" || -z "${JWT_SECRET}" ]]; then
+          echo "DATABASE_URL y JWT_SECRET son obligatorios. Gestiona los secretos en Secret Manager."
+          exit 1
+        fi
 
-# Store images in Container Registry
+  # 🔧 Limpieza de command/args obsoletos en Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: clear-run-command
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        echo "Limpiando command/args de Cloud Run antes del despliegue..."
+        gcloud run services update '${_SERVICE_NAME}' \
+          --region '${_REGION}' \
+          --clear-command \
+          --clear-args \
+          --project '$PROJECT_ID' || true
+
+  # Despliegue en Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    secretEnv:
+      - DATABASE_URL
+      - JWT_SECRET
+    args:
+      - -c
+      - |
+        gcloud run deploy '${_SERVICE_NAME}' \
+          --image '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}' \
+          --region '${_REGION}' \
+          --allow-unauthenticated \
+          --platform managed \
+          --add-cloudsql-instances '$PROJECT_ID:${_REGION}:${_INSTANCE_NAME}' \
+          --set-env-vars "NODE_ENV=production,PORT=8080,DATABASE_URL=${DATABASE_URL},JWT_SECRET=${JWT_SECRET}" \
+          --project '$PROJECT_ID'
+
 images:
-  - 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
-  - 'gcr.io/$PROJECT_ID/library-management-system:latest'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:latest'
 
-# Build options
+substitutions:
+  _SERVICE_NAME: library-management-system
+  _REGION: us-central1
+  _ARTIFACT_REPOSITORY: library-management-system
+  _INSTANCE_NAME: biblioteca-sql   # 👈 aquí
+  _IMAGE_TAG: latest
+  _DATABASE_URL: 'projects/$PROJECT_ID/secrets/library-database-url/versions/latest'
+  _JWT_SECRET: 'projects/$PROJECT_ID/secrets/library-jwt-secret/versions/latest'
+
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
+
+availableSecrets:
+  secretManager:
+    - versionName: '${_DATABASE_URL}'
+      env: DATABASE_URL
+    - versionName: '${_JWT_SECRET}'
+      env: JWT_SECRET

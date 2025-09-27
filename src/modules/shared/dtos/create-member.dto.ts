@@ -4,10 +4,10 @@ export class CreateMemberDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  name: string
+  name!: string
 
   @IsEmail()
   @IsNotEmpty()
   @MaxLength(255)
-  email: string
+  email!: string
 }

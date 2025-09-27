@@ -12,32 +12,55 @@ import { PrismaClient } from "@prisma/client"
  * `DATABASE_URL` y preparar la conexión a la base de datos utilizada por la aplicación.
  */
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  private static readonly MAX_RETRY_ATTEMPTS = 5
-  private static readonly RETRY_DELAY_MS = 2_000
-
   private readonly logger = new Logger(PrismaService.name)
+  private readonly databaseUrl?: string
 
   constructor() {
-    if (!process.env.DATABASE_URL) {
-      throw new Error(
-        "DATABASE_URL no está definida. Configura la variable de entorno antes de iniciar PrismaService.",
+    const databaseUrl = process.env.DATABASE_URL
+
+    super(
+      databaseUrl
+        ? {
+            datasources: {
+              db: {
+                url: databaseUrl,
+              },
+            },
+          }
+        : undefined,
+    )
+
+    this.databaseUrl = databaseUrl
+
+    if (!databaseUrl) {
+      this.logger.warn(
+        "DATABASE_URL no está definido. La aplicación se iniciará sin conexión a base de datos y las operaciones que dependan de ella fallarán hasta que la variable esté configurada.",
       )
     }
-
-    super({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
-    })
   }
 
   async onModuleInit() {
-    await this.connectWithRetry(
-      PrismaService.MAX_RETRY_ATTEMPTS,
-      PrismaService.RETRY_DELAY_MS,
+    if (!this.databaseUrl) {
+      this.logger.warn(
+        "Omitiendo la conexión inicial a la base de datos porque DATABASE_URL no está configurado.",
+      )
+      return
+    }
+
+    this.logger.warn(
+      "Iniciando la conexión a la base de datos en background. La aplicación continuará levantando sin esperar a que se complete el intento inicial.",
     )
+
+    void this.$connect()
+      .then(() => {
+        this.logger.log("Conexión inicial a la base de datos establecida correctamente")
+      })
+      .catch((error) => {
+        this.logger.error(
+          "No se pudo establecer la conexión inicial a la base de datos. Las operaciones seguirán fallando hasta que la conexión se restablezca.",
+          error instanceof Error ? error.stack : undefined,
+        )
+      })
   }
 
   async onModuleDestroy() {
