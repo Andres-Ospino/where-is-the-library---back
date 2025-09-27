@@ -9,7 +9,7 @@ export interface LoginCommand {
   password: string
 }
 
-interface LoginResult {
+export interface LoginResult {
   accessToken: string
   tokenType: "Bearer"
   expiresIn?: number
