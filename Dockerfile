@@ -2,19 +2,20 @@
 FROM node:18-alpine3.18 AS base
 
 RUN apk add --no-cache libc6-compat openssl openssl1.1-compat \
-  && corepack enable
+  && corepack enable \
+  && npm install -g pnpm@9.12.x
 
 WORKDIR /app
 
 # Install all dependencies for building the project
 FROM base AS deps
 COPY package.json pnpm-lock.yaml* ./
-RUN corepack pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Install only production dependencies for the runtime image
 FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml* ./
-RUN corepack pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod
 
 # Rebuild the source code only when needed
 FROM base AS builder
