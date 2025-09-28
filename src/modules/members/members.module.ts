@@ -8,6 +8,8 @@ import { ListMembersUseCase } from "./application/use-cases/list-members.use-cas
 import { MEMBER_REPOSITORY_TOKEN } from "./domain/ports/member-repository.port"
 import { TypeormMemberRepository } from "./infrastructure/repositories/typeorm-member.repository"
 import { MemberOrmEntity } from "./infrastructure/persistence/typeorm/member.orm-entity"
+import { UpdateMemberUseCase } from "./application/use-cases/update-member.use-case"
+import { DeleteMemberUseCase } from "./application/use-cases/delete-member.use-case"
 
 @Module({
   imports: [TypeOrmModule.forFeature([MemberOrmEntity])],
@@ -16,6 +18,8 @@ import { MemberOrmEntity } from "./infrastructure/persistence/typeorm/member.orm
     CreateMemberUseCase,
     FindMemberByEmailUseCase,
     ListMembersUseCase,
+    UpdateMemberUseCase,
+    DeleteMemberUseCase,
     {
       provide: MEMBER_REPOSITORY_TOKEN,
       useClass: TypeormMemberRepository,

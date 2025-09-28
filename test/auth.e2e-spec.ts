@@ -23,6 +23,7 @@ describe("Auth (e2e)", () => {
   const memberPayload = {
     name: "Alan Turing",
     email: "alan@example.com",
+    phone: "+44123456789",
   }
   const memberPassword = "StrongPass123"
 
@@ -99,7 +100,11 @@ describe("Auth (e2e)", () => {
       await dataSource.getRepository(MemberOrmEntity).clear()
       const response = await request(app.getHttpServer())
         .post("/members")
-        .send({ name: memberPayload.name, email: memberPayload.email })
+        .send({
+          name: memberPayload.name,
+          email: memberPayload.email,
+          phone: memberPayload.phone,
+        })
       expect(response.status).toBe(201)
 
       const passwordHash = await hashingService.hash(memberPassword)

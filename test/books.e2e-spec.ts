@@ -27,6 +27,7 @@ describe("Books (e2e)", () => {
   const memberCredentials = {
     name: "Test User",
     email: "user@example.com",
+    phone: "+34123456789",
     password: "Password123!",
   }
 
@@ -64,7 +65,11 @@ describe("Books (e2e)", () => {
 
     const memberResponse = await request(app.getHttpServer())
       .post("/members")
-      .send({ name: memberCredentials.name, email: memberCredentials.email })
+      .send({
+        name: memberCredentials.name,
+        email: memberCredentials.email,
+        phone: memberCredentials.phone,
+      })
     expect(memberResponse.status).toBe(201)
 
     const passwordHash = await hashingService.hash(memberCredentials.password)
