@@ -44,7 +44,7 @@ ON CONFLICT (email) DO NOTHING;
 INSERT INTO auth_accounts (email, password_hash)
 VALUES (
     'admin@whereisthelibrary.com',
-    'pbkdf2:sha512:310000:d1c56112f4a84aabbd2f82f1645f4c0a:5805b4024fe08c3ce463e32951b69b17ee0439ab4c3e2ec67d9341bc04d29c4592befc589355efe99280a4fcde6ebff05dbdf2f762f1de6589da373d6cf367dd'
+    'pbkdf2:sha512:310000:21f84c4d4a1452b39f03b120628c0414:10a36045594c922f97cdaa55018843c186b29389c0c54401b1e4fc7cbb98ac8fec6efeccb1ee5c12da74561fa9e38a8782a26044c53d1cb62b7f034c8f8ee842'
 )
 ON CONFLICT (email) DO NOTHING;
 
