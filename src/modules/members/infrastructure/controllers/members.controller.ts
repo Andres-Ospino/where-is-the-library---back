@@ -27,6 +27,7 @@ import { CreateMemberUseCase } from "../../application/use-cases/create-member.u
 import { ListMembersUseCase } from "../../application/use-cases/list-members.use-case"
 import { UpdateMemberUseCase } from "../../application/use-cases/update-member.use-case"
 import { DeleteMemberUseCase } from "../../application/use-cases/delete-member.use-case"
+import { FindMemberByIdUseCase } from "../../application/use-cases/find-member-by-id.use-case"
 import { CreateMemberDto } from "@/modules/shared/dtos/create-member.dto"
 import { UpdateMemberDto } from "@/modules/shared/dtos/update-member.dto"
 import { Public } from "@/modules/auth/decorators/public.decorator"
@@ -38,6 +39,7 @@ export class MembersController {
   constructor(
     private readonly createMemberUseCase: CreateMemberUseCase,
     private readonly listMembersUseCase: ListMembersUseCase,
+    private readonly findMemberByIdUseCase: FindMemberByIdUseCase,
     private readonly updateMemberUseCase: UpdateMemberUseCase,
     private readonly deleteMemberUseCase: DeleteMemberUseCase,
   ) {}
@@ -65,6 +67,18 @@ export class MembersController {
     const members = await this.listMembersUseCase.execute()
 
     return members.map((member) => MemberResponseDto.fromEntity(member))
+  }
+
+  @Get(":id")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Obtener detalle de un miembro" })
+  @ApiParam({ name: "id", type: Number, description: "Identificador del miembro" })
+  @ApiOkResponse({ description: "Detalle del miembro", type: MemberResponseDto })
+  @ApiNotFoundResponse({ description: "Miembro no encontrado" })
+  async findOne(@Param("id", ParseIntPipe) id: number): Promise<MemberResponseDto> {
+    const member = await this.findMemberByIdUseCase.execute({ id })
+
+    return MemberResponseDto.fromEntity(member)
   }
 
   @Patch(":id")
