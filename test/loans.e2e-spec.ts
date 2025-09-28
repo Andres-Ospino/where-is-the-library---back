@@ -41,7 +41,16 @@ describe("Loans (e2e)", () => {
     }).compile()
 
     app = moduleFixture.createNestApplication()
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    )
     app.useGlobalFilters(new GlobalExceptionFilter())
 
     bookRepository = app.get(BOOK_REPOSITORY_TOKEN) as BookRepositoryPort
@@ -93,6 +102,22 @@ describe("Loans (e2e)", () => {
         .send({
           bookId,
           memberId,
+        })
+
+      expect(response.status).toBe(201)
+      expect(response.body).toHaveProperty("id")
+      expect(response.body.bookId).toBe(bookId)
+      expect(response.body.memberId).toBe(memberId)
+      expect(response.body.isReturned).toBe(false)
+    })
+
+    it("should accept numeric identifiers provided as strings", async () => {
+      const response = await request(app.getHttpServer())
+        .post("/loans")
+        .set("Authorization", `Bearer ${authToken}`)
+        .send({
+          bookId: bookId.toString(),
+          memberId: memberId.toString(),
         })
 
       expect(response.status).toBe(201)
