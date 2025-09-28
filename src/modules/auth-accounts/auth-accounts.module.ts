@@ -6,9 +6,10 @@ import { AUTH_ACCOUNT_REPOSITORY_TOKEN } from "./domain/ports/auth-account-repos
 import { AuthAccountOrmEntity } from "./infrastructure/persistence/typeorm/auth-account.orm-entity"
 import { TypeormAuthAccountRepository } from "./infrastructure/repositories/typeorm-auth-account.repository"
 import { AuthAccountsSeeder } from "./infrastructure/seeding/auth-accounts.seeder"
+import { MembersModule } from "@/modules/members/members.module"
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AuthAccountOrmEntity])],
+  imports: [TypeOrmModule.forFeature([AuthAccountOrmEntity]), MembersModule],
   providers: [
     FindAuthAccountByEmailUseCase,
     AuthAccountsSeeder,
