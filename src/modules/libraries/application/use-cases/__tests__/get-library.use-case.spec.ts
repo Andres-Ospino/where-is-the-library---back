@@ -12,7 +12,7 @@ describe("GetLibraryUseCase", () => {
       save: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn(),
-    }
+    } as unknown as jest.Mocked<LibraryRepositoryPort>
 
     useCase = new GetLibraryUseCase(mockLibraryRepository)
   })
@@ -23,7 +23,7 @@ describe("GetLibraryUseCase", () => {
 
     const result = await useCase.execute({ id: 1 })
 
-    expect(mockLibraryRepository.findById).toHaveBeenCalledWith(1)
+    expect(mockLibraryRepository.findById).toHaveBeenCalledWith(1, { includeBooks: true })
     expect(result).toBe(library)
   })
 

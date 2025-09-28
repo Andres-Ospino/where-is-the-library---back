@@ -96,6 +96,8 @@ describe("Libraries (e2e)", () => {
       expect(response.body.name).toBe("Biblioteca Central")
       expect(response.body.address).toBe("Av. Siempre Viva 123")
       expect(response.body.openingHours).toBe("Lunes a Viernes 09:00-18:00")
+      expect(Array.isArray(response.body.books)).toBe(true)
+      expect(response.body.books).toHaveLength(0)
     })
 
     it("should return 400 for invalid data", async () => {
@@ -114,8 +116,28 @@ describe("Libraries (e2e)", () => {
 
   describe("/libraries (GET)", () => {
     beforeEach(async () => {
-      await libraryRepository.save(Library.create("Biblioteca Central", "Av. Siempre Viva 123", "Lunes a Viernes 09:00-18:00"))
-      await libraryRepository.save(Library.create("Biblioteca Barrio", "Calle Falsa 456", "Martes a Domingo 10:00-16:00"))
+      const central = await libraryRepository.save(
+        Library.create("Biblioteca Central", "Av. Siempre Viva 123", "Lunes a Viernes 09:00-18:00"),
+      )
+      const barrio = await libraryRepository.save(
+        Library.create("Biblioteca Barrio", "Calle Falsa 456", "Martes a Domingo 10:00-16:00"),
+      )
+
+      await dataSource.getRepository(BookOrmEntity).save({
+        title: "El Quijote",
+        author: "Miguel de Cervantes",
+        isbn: "9783161484100",
+        available: true,
+        libraryId: barrio.id ?? undefined,
+      })
+
+      await dataSource.getRepository(BookOrmEntity).save({
+        title: "Cien años de soledad",
+        author: "Gabriel García Márquez",
+        isbn: "9780307474728",
+        available: true,
+        libraryId: central.id ?? undefined,
+      })
     })
 
     it("should return all libraries", async () => {
@@ -125,10 +147,15 @@ describe("Libraries (e2e)", () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(2)
-      expect(response.body[0]).toHaveProperty("id")
-      expect(response.body[0]).toHaveProperty("name")
-      expect(response.body[0]).toHaveProperty("address")
-      expect(response.body[0]).toHaveProperty("openingHours")
+      const barrioLibrary = response.body.find((item: any) => item.name === "Biblioteca Barrio")
+      const centralLibrary = response.body.find((item: any) => item.name === "Biblioteca Central")
+
+      expect(barrioLibrary).toBeDefined()
+      expect(centralLibrary).toBeDefined()
+      expect(barrioLibrary.books).toHaveLength(1)
+      expect(barrioLibrary.books[0].title).toBe("El Quijote")
+      expect(centralLibrary.books).toHaveLength(1)
+      expect(centralLibrary.books[0].title).toBe("Cien años de soledad")
     })
   })
 
@@ -140,6 +167,14 @@ describe("Libraries (e2e)", () => {
         Library.create("Biblioteca Central", "Av. Siempre Viva 123", "Lunes a Viernes 09:00-18:00"),
       )
       libraryId = library.id as number
+
+      await dataSource.getRepository(BookOrmEntity).save({
+        title: "Rayuela",
+        author: "Julio Cortázar",
+        isbn: "9780679737553",
+        available: true,
+        libraryId,
+      })
     })
 
     it("should return a library by id", async () => {
@@ -149,6 +184,8 @@ describe("Libraries (e2e)", () => {
 
       expect(response.status).toBe(200)
       expect(response.body.id).toBe(libraryId)
+      expect(response.body.books).toHaveLength(1)
+      expect(response.body.books[0].title).toBe("Rayuela")
     })
 
     it("should return 404 for non-existent library", async () => {

@@ -49,6 +49,7 @@ export class BooksController {
       title: createBookDto.title,
       author: createBookDto.author,
       isbn: createBookDto.isbn,
+      libraryId: createBookDto.libraryId,
     })
 
     return BookResponseDto.fromEntity(book)
@@ -95,6 +96,7 @@ export class BooksController {
       title: updateBookDto.title,
       author: updateBookDto.author,
       isbn: updateBookDto.isbn,
+      libraryId: updateBookDto.libraryId,
     })
 
     return BookResponseDto.fromEntity(book)

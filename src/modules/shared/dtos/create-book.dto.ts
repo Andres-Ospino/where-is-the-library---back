@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger"
-import { IsString, IsNotEmpty, MaxLength, Matches } from "class-validator"
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
+import { IsString, IsNotEmpty, MaxLength, Matches, IsOptional, IsInt, Min } from "class-validator"
 
 export class CreateBookDto {
   @ApiProperty({ example: "El principito", description: "Título del libro" })
@@ -24,4 +24,13 @@ export class CreateBookDto {
     message: "isbn must be a 10 or 13 digit numeric string",
   })
   isbn!: string
+
+  @ApiPropertyOptional({
+    example: 1,
+    description: "Identificador de la biblioteca a la que pertenece el libro",
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  libraryId?: number
 }

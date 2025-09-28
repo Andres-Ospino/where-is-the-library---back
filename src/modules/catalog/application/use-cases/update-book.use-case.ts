@@ -9,6 +9,7 @@ export interface UpdateBookCommand {
   title: string
   author: string
   isbn: string
+  libraryId?: number | null
 }
 
 @Injectable()
@@ -30,6 +31,7 @@ export class UpdateBookUseCase {
       command.author,
       command.isbn,
       existingBook.available,
+      command.libraryId ?? existingBook.libraryId,
     )
 
     return await this.bookRepository.update(updatedBook)

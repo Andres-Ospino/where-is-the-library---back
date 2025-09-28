@@ -11,7 +11,7 @@ describe("ListLibrariesUseCase", () => {
       save: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn(),
-    }
+    } as unknown as jest.Mocked<LibraryRepositoryPort>
 
     useCase = new ListLibrariesUseCase(mockLibraryRepository)
   })
@@ -25,7 +25,7 @@ describe("ListLibrariesUseCase", () => {
 
     const result = await useCase.execute()
 
-    expect(mockLibraryRepository.findAll).toHaveBeenCalled()
+    expect(mockLibraryRepository.findAll).toHaveBeenCalledWith({ includeBooks: true })
     expect(result).toEqual(libraries)
   })
 })

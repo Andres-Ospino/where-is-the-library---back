@@ -8,6 +8,7 @@ interface BookRecord {
   author: string
   isbn: string
   available: boolean
+  libraryId: number | null
 }
 
 @Injectable()
@@ -22,11 +23,12 @@ export class InMemoryBookRepository implements BookRepositoryPort {
       author: book.author,
       isbn: book.isbn,
       available: book.available,
+      libraryId: book.libraryId ?? null,
     }
 
     this.books.push(record)
 
-    return Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available)
+    return Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available, record.libraryId)
   }
 
   async findById(id: number): Promise<Book | null> {
@@ -35,14 +37,16 @@ export class InMemoryBookRepository implements BookRepositoryPort {
       return null
     }
 
-    return Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available)
+    return Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available, record.libraryId)
   }
 
   async findAll(): Promise<Book[]> {
     return this.books
       .slice()
       .sort((a, b) => a.title.localeCompare(b.title))
-      .map((record) => Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available))
+      .map((record) =>
+        Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available, record.libraryId),
+      )
   }
 
   async update(book: Book): Promise<Book> {
@@ -62,11 +66,19 @@ export class InMemoryBookRepository implements BookRepositoryPort {
       author: book.author,
       isbn: book.isbn,
       available: book.available,
+      libraryId: book.libraryId ?? null,
     }
 
     this.books[index] = updated
 
-    return Book.fromPersistence(updated.id, updated.title, updated.author, updated.isbn, updated.available)
+    return Book.fromPersistence(
+      updated.id,
+      updated.title,
+      updated.author,
+      updated.isbn,
+      updated.available,
+      updated.libraryId,
+    )
   }
 
   async delete(id: number): Promise<void> {
@@ -78,7 +90,9 @@ export class InMemoryBookRepository implements BookRepositoryPort {
     return this.books
       .filter((book) => book.title.toLowerCase().includes(search))
       .sort((a, b) => a.title.localeCompare(b.title))
-      .map((record) => Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available))
+      .map((record) =>
+        Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available, record.libraryId),
+      )
   }
 
   async findByAuthor(author: string): Promise<Book[]> {
@@ -86,7 +100,9 @@ export class InMemoryBookRepository implements BookRepositoryPort {
     return this.books
       .filter((book) => book.author.toLowerCase().includes(search))
       .sort((a, b) => a.title.localeCompare(b.title))
-      .map((record) => Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available))
+      .map((record) =>
+        Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available, record.libraryId),
+      )
   }
 
   clear(): void {

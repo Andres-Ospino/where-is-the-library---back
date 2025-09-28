@@ -1,11 +1,23 @@
-import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm"
 import { LoanOrmEntity } from "@/modules/loans/infrastructure/persistence/typeorm/loan.orm-entity"
+import { LibraryOrmEntity } from "@/modules/libraries/infrastructure/persistence/typeorm/library.orm-entity"
 
 @Entity({ name: "books" })
 @Index(["title"])
 @Index(["author"])
 @Index(["available"])
 @Index(["isbn"])
+@Index(["libraryId"])
 export class BookOrmEntity {
   @PrimaryGeneratedColumn()
   id!: number
@@ -21,6 +33,13 @@ export class BookOrmEntity {
 
   @Column({ default: true })
   available!: boolean
+
+  @Column({ name: "library_id", type: "int", nullable: true })
+  libraryId!: number | null
+
+  @ManyToOne(() => LibraryOrmEntity, (library) => library.books, { onDelete: "SET NULL" })
+  @JoinColumn({ name: "library_id" })
+  library?: LibraryOrmEntity | null
 
   @OneToMany(() => LoanOrmEntity, (loan) => loan.book)
   loans?: LoanOrmEntity[]
