@@ -5,6 +5,7 @@ import { type BookRepositoryPort, BOOK_REPOSITORY_TOKEN } from "../../domain/por
 export interface CreateBookCommand {
   title: string
   author: string
+  isbn: string
 }
 
 @Injectable()
@@ -15,7 +16,7 @@ export class CreateBookUseCase {
   ) {}
 
   async execute(command: CreateBookCommand): Promise<Book> {
-    const book = Book.create(command.title, command.author)
+    const book = Book.create(command.title, command.author, command.isbn)
     return await this.bookRepository.save(book)
   }
 }

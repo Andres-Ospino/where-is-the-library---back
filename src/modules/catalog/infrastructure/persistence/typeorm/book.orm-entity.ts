@@ -5,6 +5,7 @@ import { LoanOrmEntity } from "@/modules/loans/infrastructure/persistence/typeor
 @Index(["title"])
 @Index(["author"])
 @Index(["available"])
+@Index(["isbn"])
 export class BookOrmEntity {
   @PrimaryGeneratedColumn()
   id!: number
@@ -14,6 +15,9 @@ export class BookOrmEntity {
 
   @Column({ length: 255 })
   author!: string
+
+  @Column({ length: 13 })
+  isbn!: string
 
   @Column({ default: true })
   available!: boolean

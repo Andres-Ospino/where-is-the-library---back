@@ -1,22 +1,26 @@
 import { ValidationError } from "@/modules/shared/errors/validation.error"
 
 export class Book {
+  private readonly _isbn: string
+
   constructor(
     private readonly _id: number | null,
     private readonly _title: string,
     private readonly _author: string,
+    isbn: string,
     private _available: boolean,
   ) {
     this.validateTitle(_title)
     this.validateAuthor(_author)
+    this._isbn = this.validateIsbn(isbn)
   }
 
-  static create(title: string, author: string): Book {
-    return new Book(null, title, author, true)
+  static create(title: string, author: string, isbn: string): Book {
+    return new Book(null, title, author, isbn, true)
   }
 
-  static fromPersistence(id: number, title: string, author: string, available: boolean): Book {
-    return new Book(id, title, author, available)
+  static fromPersistence(id: number, title: string, author: string, isbn: string, available: boolean): Book {
+    return new Book(id, title, author, isbn, available)
   }
 
   get id(): number | null {
@@ -29,6 +33,10 @@ export class Book {
 
   get author(): string {
     return this._author
+  }
+
+  get isbn(): string {
+    return this._isbn
   }
 
   get available(): boolean {
@@ -65,5 +73,17 @@ export class Book {
     if (author.length > 255) {
       throw new ValidationError("Book author cannot exceed 255 characters")
     }
+  }
+
+  private validateIsbn(isbn: string): string {
+    if (!isbn || isbn.trim().length === 0) {
+      throw new ValidationError("Book ISBN cannot be empty")
+    }
+
+    const normalizedIsbn = isbn.trim()
+    if (!/^(?:\d{10}|\d{13})$/u.test(normalizedIsbn)) {
+      throw new ValidationError("Book ISBN must be a 10 or 13 digit numeric string")
+    }
+    return normalizedIsbn
   }
 }
