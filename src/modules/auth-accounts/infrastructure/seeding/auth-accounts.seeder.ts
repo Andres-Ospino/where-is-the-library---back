@@ -5,7 +5,7 @@ import { AUTH_ACCOUNT_REPOSITORY_TOKEN, type AuthAccountRepositoryPort } from ".
 import { HASHING_SERVICE_TOKEN, type HashingPort } from "@/modules/shared/ports/hashing.port"
 
 const DEFAULT_ADMIN_EMAIL = "admin@whereisthelibrary.com"
-const DEFAULT_ADMIN_PASSWORD = "admin"
+const DEFAULT_ADMIN_PASSWORD = "A20020515o"
 
 @Injectable()
 export class AuthAccountsSeeder implements OnModuleInit {
