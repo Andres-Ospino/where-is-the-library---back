@@ -12,11 +12,15 @@ export class MemberResponseDto {
   @ApiProperty({ example: "juana.perez@example.com", description: "Correo electrónico del miembro" })
   email!: string
 
+  @ApiProperty({ example: "+34 600 123 456", description: "Número de contacto del miembro" })
+  phone!: string
+
   static fromEntity(member: Member): MemberResponseDto {
     const dto = new MemberResponseDto()
     dto.id = member.id
     dto.name = member.name
     dto.email = member.email
+    dto.phone = member.phone
     return dto
   }
 }

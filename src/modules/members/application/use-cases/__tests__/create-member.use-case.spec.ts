@@ -9,6 +9,7 @@ describe("CreateMemberUseCase", () => {
   const command = {
     name: "Ada Lovelace",
     email: "ada@example.com",
+    phone: "+44123456789",
   }
 
   beforeEach(() => {
@@ -27,7 +28,7 @@ describe("CreateMemberUseCase", () => {
   it("should persist the member without hashing operations", async () => {
     mockMemberRepository.findByEmail.mockResolvedValue(null)
 
-    const persistedMember = Member.fromPersistence(1, command.name, command.email)
+    const persistedMember = Member.fromPersistence(1, command.name, command.email, command.phone)
     mockMemberRepository.save.mockResolvedValue(persistedMember)
 
     const result = await useCase.execute(command)
@@ -37,11 +38,12 @@ describe("CreateMemberUseCase", () => {
     const savedMember = mockMemberRepository.save.mock.calls[0][0] as Member
     expect(savedMember).toBeInstanceOf(Member)
     expect(savedMember.id).toBeNull()
+    expect(savedMember.phone).toBe(command.phone)
     expect(result).toBe(persistedMember)
   })
 
   it("should throw ConflictError when email already exists", async () => {
-    const existingMember = Member.fromPersistence(1, command.name, command.email)
+    const existingMember = Member.fromPersistence(1, command.name, command.email, command.phone)
     mockMemberRepository.findByEmail.mockResolvedValue(existingMember)
 
     await expect(useCase.execute(command)).rejects.toThrow(ConflictError)
