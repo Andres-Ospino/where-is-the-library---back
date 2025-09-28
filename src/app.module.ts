@@ -5,6 +5,7 @@ import { CoreModule } from "@/core/core.module"
 import { CatalogModule } from "@/modules/catalog/catalog.module"
 import { MembersModule } from "@/modules/members/members.module"
 import { LoansModule } from "@/modules/loans/loans.module"
+import { LibrariesModule } from "@/modules/libraries/libraries.module"
 import { HealthModule } from "./health/health.module"
 import { AuthModule } from "@/modules/auth/auth.module"
 import { ensureCloudSqlEnv, loadCloudSqlConfig } from "@/config/cloudsql.config"
@@ -31,6 +32,7 @@ ensureCloudSqlEnv()
     CoreModule,
     AuthModule,
     CatalogModule,
+    LibrariesModule,
     MembersModule,
     LoansModule,
     HealthModule,
