@@ -17,13 +17,14 @@ export class TypeormBookRepository implements BookRepositoryPort {
   }
 
   private toDomain(entity: BookOrmEntity): Book {
-    return Book.fromPersistence(entity.id, entity.title, entity.author, entity.available)
+    return Book.fromPersistence(entity.id, entity.title, entity.author, entity.isbn, entity.available)
   }
 
   async save(book: Book): Promise<Book> {
     const entity = this.repository.create({
       title: book.title,
       author: book.author,
+      isbn: book.isbn,
       available: book.available,
     })
 
@@ -51,6 +52,7 @@ export class TypeormBookRepository implements BookRepositoryPort {
       id,
       title: book.title,
       author: book.author,
+      isbn: book.isbn,
       available: book.available,
     })
 
