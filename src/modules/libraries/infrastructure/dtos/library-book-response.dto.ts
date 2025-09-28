@@ -1,14 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger"
-
 import type { Book } from "@/modules/catalog/domain/entities/book.entity"
 
-export class BookResponseDto {
-  @ApiProperty({
-    example: 1,
-    description: "Identificador único del libro",
-    nullable: true,
-  })
-  id!: number | null
+export class LibraryBookResponseDto {
+  @ApiProperty({ example: 1, description: "Identificador del libro" })
+  id!: number
 
   @ApiProperty({ example: "El Quijote", description: "Título del libro" })
   title!: string
@@ -19,24 +14,16 @@ export class BookResponseDto {
   @ApiProperty({ example: "9783161484100", description: "Código ISBN del libro" })
   isbn!: string
 
-  @ApiProperty({ example: true, description: "Indica si el libro está disponible para préstamo" })
+  @ApiProperty({ example: true, description: "Disponibilidad del libro" })
   available!: boolean
 
-  @ApiProperty({
-    example: 1,
-    description: "Identificador de la biblioteca a la que está asociado el libro",
-    nullable: true,
-  })
-  libraryId!: number | null
-
-  static fromEntity(book: Book): BookResponseDto {
-    const dto = new BookResponseDto()
-    dto.id = book.id
+  static fromEntity(book: Book): LibraryBookResponseDto {
+    const dto = new LibraryBookResponseDto()
+    dto.id = book.id as number
     dto.title = book.title
     dto.author = book.author
     dto.isbn = book.isbn
     dto.available = book.available
-    dto.libraryId = book.libraryId
     return dto
   }
 }

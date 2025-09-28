@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
+import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
+import { BookOrmEntity } from "@/modules/catalog/infrastructure/persistence/typeorm/book.orm-entity"
 
 @Entity({ name: "libraries" })
 @Index(["name"])
@@ -20,4 +21,7 @@ export class LibraryOrmEntity {
 
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt!: Date
+
+  @OneToMany(() => BookOrmEntity, (book) => book.library)
+  books?: BookOrmEntity[]
 }

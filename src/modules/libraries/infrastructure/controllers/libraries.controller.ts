@@ -40,15 +40,19 @@ export class LibrariesController {
   }
 
   @Get()
-  @ApiOperation({ summary: "Listar bibliotecas" })
-  @ApiOkResponse({ description: "Listado de bibliotecas", type: LibraryResponseDto, isArray: true })
+  @ApiOperation({ summary: "Listar bibliotecas con sus libros asociados" })
+  @ApiOkResponse({
+    description: "Listado de bibliotecas incluyendo los libros registrados en cada una",
+    type: LibraryResponseDto,
+    isArray: true,
+  })
   async findAll(): Promise<LibraryResponseDto[]> {
     const libraries = await this.listLibrariesUseCase.execute()
     return libraries.map((library) => LibraryResponseDto.fromEntity(library))
   }
 
   @Get(":id")
-  @ApiOperation({ summary: "Obtener detalle de una biblioteca" })
+  @ApiOperation({ summary: "Obtener detalle de una biblioteca y sus libros" })
   @ApiParam({ name: "id", type: Number, description: "Identificador de la biblioteca" })
   @ApiOkResponse({ description: "Biblioteca encontrada", type: LibraryResponseDto })
   @ApiNotFoundResponse({ description: "Biblioteca no encontrada" })

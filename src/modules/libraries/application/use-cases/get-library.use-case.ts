@@ -14,7 +14,7 @@ export class GetLibraryUseCase {
   ) {}
 
   async execute(query: GetLibraryQuery): Promise<Library> {
-    const library = await this.libraryRepository.findById(query.id)
+    const library = await this.libraryRepository.findById(query.id, { includeBooks: true })
     if (!library) {
       throw new NotFoundException(`Library with ID ${query.id} not found`)
     }

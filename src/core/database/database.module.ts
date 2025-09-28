@@ -8,12 +8,23 @@ import { AuthAccountOrmEntity } from "@/modules/auth-accounts/infrastructure/per
 import { LibraryOrmEntity } from "@/modules/libraries/infrastructure/persistence/typeorm/library.orm-entity"
 import { CreateAuthAccountsTable1717094400000 } from "./migrations/1717094400000-create-auth-accounts-table"
 import { CreateMembersBooksLoansTables1717094401000 } from "./migrations/1717094401000-create-members-books-loans-tables"
+import { AddIsbnToBooksTable1717094402000 } from "./migrations/1717094402000-add-isbn-to-books-table"
+import { AddPhoneToMembersTable1719000000000 } from "./migrations/1719000000000-add-phone-to-members-table"
+import { CreateLibrariesTable1719500000000 } from "./migrations/1719500000000-create-libraries-table"
+import { AddLibraryIdToBooksTable1719500001000 } from "./migrations/1719500001000-add-library-id-to-books-table"
 import { cloudSqlDefaults } from "@/config/cloudsql.config"
 
 function buildTypeOrmOptions(configService: ConfigService): TypeOrmModuleOptions {
   const nodeEnv = configService.get<string>("NODE_ENV")
   const entities = [BookOrmEntity, MemberOrmEntity, LoanOrmEntity, AuthAccountOrmEntity, LibraryOrmEntity]
-  const migrations = [CreateAuthAccountsTable1717094400000, CreateMembersBooksLoansTables1717094401000]
+  const migrations = [
+    CreateAuthAccountsTable1717094400000,
+    CreateMembersBooksLoansTables1717094401000,
+    AddIsbnToBooksTable1717094402000,
+    AddPhoneToMembersTable1719000000000,
+    CreateLibrariesTable1719500000000,
+    AddLibraryIdToBooksTable1719500001000,
+  ]
 
   if (nodeEnv === "test") {
     return {

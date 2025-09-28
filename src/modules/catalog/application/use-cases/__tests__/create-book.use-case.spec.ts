@@ -15,7 +15,7 @@ describe("CreateBookUseCase", () => {
       delete: jest.fn(),
       findByTitle: jest.fn(),
       findByAuthor: jest.fn(),
-    }
+    } as unknown as jest.Mocked<BookRepositoryPort>
 
     useCase = new CreateBookUseCase(mockBookRepository)
   })
@@ -26,9 +26,10 @@ describe("CreateBookUseCase", () => {
       title: "The Great Gatsby",
       author: "F. Scott Fitzgerald",
       isbn: "1234567890",
+      libraryId: 1,
     }
 
-    const expectedBook = Book.fromPersistence(1, command.title, command.author, command.isbn, true)
+    const expectedBook = Book.fromPersistence(1, command.title, command.author, command.isbn, true, command.libraryId)
     mockBookRepository.save.mockResolvedValue(expectedBook)
 
     // Act
@@ -41,6 +42,7 @@ describe("CreateBookUseCase", () => {
         author: command.author,
         isbn: command.isbn,
         available: true,
+        libraryId: command.libraryId,
       }),
     )
     expect(result).toEqual(expectedBook)

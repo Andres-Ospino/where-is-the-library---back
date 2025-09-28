@@ -11,7 +11,7 @@ describe("CreateLibraryUseCase", () => {
       save: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn(),
-    }
+    } as unknown as jest.Mocked<LibraryRepositoryPort>
 
     useCase = new CreateLibraryUseCase(mockLibraryRepository)
   })

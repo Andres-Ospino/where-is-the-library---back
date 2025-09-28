@@ -10,6 +10,6 @@ export class ListLibrariesUseCase {
   ) {}
 
   async execute(): Promise<Library[]> {
-    return await this.libraryRepository.findAll()
+    return await this.libraryRepository.findAll({ includeBooks: true })
   }
 }

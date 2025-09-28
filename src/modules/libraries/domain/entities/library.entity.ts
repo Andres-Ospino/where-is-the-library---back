@@ -1,3 +1,4 @@
+import { Book } from "@/modules/catalog/domain/entities/book.entity"
 import { ValidationError } from "@/modules/shared/errors/validation.error"
 
 export class Library {
@@ -6,6 +7,7 @@ export class Library {
     private readonly _name: string,
     private readonly _address: string,
     private readonly _openingHours: string,
+    private readonly _books: Book[] = [],
   ) {
     this.validateName(_name)
     this.validateAddress(_address)
@@ -13,11 +15,17 @@ export class Library {
   }
 
   static create(name: string, address: string, openingHours: string): Library {
-    return new Library(null, name, address, openingHours)
+    return new Library(null, name, address, openingHours, [])
   }
 
-  static fromPersistence(id: number, name: string, address: string, openingHours: string): Library {
-    return new Library(id, name, address, openingHours)
+  static fromPersistence(
+    id: number,
+    name: string,
+    address: string,
+    openingHours: string,
+    books: Book[] = [],
+  ): Library {
+    return new Library(id, name, address, openingHours, books)
   }
 
   get id(): number | null {
@@ -34,6 +42,10 @@ export class Library {
 
   get openingHours(): string {
     return this._openingHours
+  }
+
+  get books(): Book[] {
+    return this._books
   }
 
   private validateName(name: string): void {

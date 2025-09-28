@@ -6,6 +6,7 @@ export interface CreateBookCommand {
   title: string
   author: string
   isbn: string
+  libraryId?: number | null
 }
 
 @Injectable()
@@ -16,7 +17,7 @@ export class CreateBookUseCase {
   ) {}
 
   async execute(command: CreateBookCommand): Promise<Book> {
-    const book = Book.create(command.title, command.author, command.isbn)
+    const book = Book.create(command.title, command.author, command.isbn, command.libraryId)
     return await this.bookRepository.save(book)
   }
 }

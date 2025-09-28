@@ -13,6 +13,7 @@ describe("Book Entity", () => {
       expect(book.available).toBe(true)
       expect(book.isbn).toBe("1234567890")
       expect(book.id).toBeNull()
+      expect(book.libraryId).toBeNull()
     })
 
     it("should throw ValidationError for empty title", () => {
@@ -64,7 +65,7 @@ describe("Book Entity", () => {
 
     it("should throw ValidationError when book is already unavailable", () => {
       // Arrange
-      const book = Book.fromPersistence(1, "Test Book", "Test Author", "1234567890", false)
+      const book = Book.fromPersistence(1, "Test Book", "Test Author", "1234567890", false, null)
 
       // Act & Assert
       expect(() => book.markAsUnavailable()).toThrow(ValidationError)
@@ -75,7 +76,7 @@ describe("Book Entity", () => {
   describe("markAsAvailable", () => {
     it("should mark unavailable book as available", () => {
       // Arrange
-      const book = Book.fromPersistence(1, "Test Book", "Test Author", "1234567890", false)
+      const book = Book.fromPersistence(1, "Test Book", "Test Author", "1234567890", false, null)
 
       // Act
       book.markAsAvailable()

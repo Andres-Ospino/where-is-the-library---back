@@ -60,7 +60,7 @@ describe("ReturnBookUseCase", () => {
     const loanDate = new Date("2024-01-01T10:00:00Z")
     const returnDate = new Date("2024-01-05T10:00:00Z")
     const loan = Loan.fromPersistence(1, 10, 20, loanDate)
-    const book = Book.fromPersistence(10, "Clean Code", "Robert C. Martin", "1234567890", false)
+    const book = Book.fromPersistence(10, "Clean Code", "Robert C. Martin", "1234567890", false, null)
 
     mockLoanRepository.findById.mockResolvedValue(loan)
     mockBookRepository.findById.mockResolvedValue(book)
