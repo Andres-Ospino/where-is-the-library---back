@@ -6,12 +6,13 @@ import { MemberOrmEntity } from "@/modules/members/infrastructure/persistence/ty
 import { LoanOrmEntity } from "@/modules/loans/infrastructure/persistence/typeorm/loan.orm-entity"
 import { AuthAccountOrmEntity } from "@/modules/auth-accounts/infrastructure/persistence/typeorm/auth-account.orm-entity"
 import { CreateAuthAccountsTable1717094400000 } from "./migrations/1717094400000-create-auth-accounts-table"
+import { CreateMembersBooksLoansTables1717094401000 } from "./migrations/1717094401000-create-members-books-loans-tables"
 import { cloudSqlDefaults } from "@/config/cloudsql.config"
 
 function buildTypeOrmOptions(configService: ConfigService): TypeOrmModuleOptions {
   const nodeEnv = configService.get<string>("NODE_ENV")
   const entities = [BookOrmEntity, MemberOrmEntity, LoanOrmEntity, AuthAccountOrmEntity]
-  const migrations = [CreateAuthAccountsTable1717094400000]
+  const migrations = [CreateAuthAccountsTable1717094400000, CreateMembersBooksLoansTables1717094401000]
 
   if (nodeEnv === "test") {
     return {
