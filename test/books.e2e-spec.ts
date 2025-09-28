@@ -83,12 +83,14 @@ describe("Books (e2e)", () => {
         .send({
           title: "The Great Gatsby",
           author: "F. Scott Fitzgerald",
+          isbn: "9783161484100",
         })
 
       expect(response.status).toBe(201)
       expect(response.body).toHaveProperty("id")
       expect(response.body.title).toBe("The Great Gatsby")
       expect(response.body.author).toBe("F. Scott Fitzgerald")
+      expect(response.body.isbn).toBe("9783161484100")
       expect(response.body.available).toBe(true)
     })
 
@@ -99,6 +101,7 @@ describe("Books (e2e)", () => {
         .send({
           title: "",
           author: "F. Scott Fitzgerald",
+          isbn: "9783161484100",
         })
 
       expect(response.status).toBe(400)
@@ -107,8 +110,8 @@ describe("Books (e2e)", () => {
 
   describe("/books (GET)", () => {
     beforeEach(async () => {
-      await bookRepository.save(Book.create("Book 1", "Author 1"))
-      const unavailable = await bookRepository.save(Book.create("Book 2", "Author 2"))
+      await bookRepository.save(Book.create("Book 1", "Author 1", "1234567890"))
+      const unavailable = await bookRepository.save(Book.create("Book 2", "Author 2", "1234567890123"))
       unavailable.markAsUnavailable()
       await bookRepository.update(unavailable)
     })
@@ -123,6 +126,7 @@ describe("Books (e2e)", () => {
       expect(response.body[0]).toHaveProperty("id")
       expect(response.body[0]).toHaveProperty("title")
       expect(response.body[0]).toHaveProperty("author")
+      expect(response.body[0]).toHaveProperty("isbn")
       expect(response.body[0]).toHaveProperty("available")
     })
 
@@ -141,7 +145,7 @@ describe("Books (e2e)", () => {
     let bookId: number
 
     beforeEach(async () => {
-      const book = await bookRepository.save(Book.create("Original Title", "Original Author"))
+      const book = await bookRepository.save(Book.create("Original Title", "Original Author", "1234567890"))
       bookId = book.id as number
     })
 
@@ -152,11 +156,13 @@ describe("Books (e2e)", () => {
         .send({
           title: "Updated Title",
           author: "Updated Author",
+          isbn: "0987654321123",
         })
 
       expect(response.status).toBe(200)
       expect(response.body.title).toBe("Updated Title")
       expect(response.body.author).toBe("Updated Author")
+      expect(response.body.isbn).toBe("0987654321123")
     })
 
     it("should return 404 for non-existent book", async () => {
@@ -166,6 +172,7 @@ describe("Books (e2e)", () => {
         .send({
           title: "Updated Title",
           author: "Updated Author",
+          isbn: "0987654321123",
         })
 
       expect(response.status).toBe(404)
@@ -176,7 +183,7 @@ describe("Books (e2e)", () => {
     let bookId: number
 
     beforeEach(async () => {
-      const book = await bookRepository.save(Book.create("Book to Delete", "Author"))
+      const book = await bookRepository.save(Book.create("Book to Delete", "Author", "1234567890"))
       bookId = book.id as number
     })
 

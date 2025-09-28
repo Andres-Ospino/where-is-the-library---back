@@ -6,6 +6,7 @@ interface BookRecord {
   id: number
   title: string
   author: string
+  isbn: string
   available: boolean
 }
 
@@ -19,12 +20,13 @@ export class InMemoryBookRepository implements BookRepositoryPort {
       id: this.nextId++,
       title: book.title,
       author: book.author,
+      isbn: book.isbn,
       available: book.available,
     }
 
     this.books.push(record)
 
-    return Book.fromPersistence(record.id, record.title, record.author, record.available)
+    return Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available)
   }
 
   async findById(id: number): Promise<Book | null> {
@@ -33,14 +35,14 @@ export class InMemoryBookRepository implements BookRepositoryPort {
       return null
     }
 
-    return Book.fromPersistence(record.id, record.title, record.author, record.available)
+    return Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available)
   }
 
   async findAll(): Promise<Book[]> {
     return this.books
       .slice()
       .sort((a, b) => a.title.localeCompare(b.title))
-      .map((record) => Book.fromPersistence(record.id, record.title, record.author, record.available))
+      .map((record) => Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available))
   }
 
   async update(book: Book): Promise<Book> {
@@ -58,12 +60,13 @@ export class InMemoryBookRepository implements BookRepositoryPort {
       id,
       title: book.title,
       author: book.author,
+      isbn: book.isbn,
       available: book.available,
     }
 
     this.books[index] = updated
 
-    return Book.fromPersistence(updated.id, updated.title, updated.author, updated.available)
+    return Book.fromPersistence(updated.id, updated.title, updated.author, updated.isbn, updated.available)
   }
 
   async delete(id: number): Promise<void> {
@@ -75,7 +78,7 @@ export class InMemoryBookRepository implements BookRepositoryPort {
     return this.books
       .filter((book) => book.title.toLowerCase().includes(search))
       .sort((a, b) => a.title.localeCompare(b.title))
-      .map((record) => Book.fromPersistence(record.id, record.title, record.author, record.available))
+      .map((record) => Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available))
   }
 
   async findByAuthor(author: string): Promise<Book[]> {
@@ -83,7 +86,7 @@ export class InMemoryBookRepository implements BookRepositoryPort {
     return this.books
       .filter((book) => book.author.toLowerCase().includes(search))
       .sort((a, b) => a.title.localeCompare(b.title))
-      .map((record) => Book.fromPersistence(record.id, record.title, record.author, record.available))
+      .map((record) => Book.fromPersistence(record.id, record.title, record.author, record.isbn, record.available))
   }
 
   clear(): void {

@@ -48,6 +48,7 @@ export class BooksController {
     const book = await this.createBookUseCase.execute({
       title: createBookDto.title,
       author: createBookDto.author,
+      isbn: createBookDto.isbn,
     })
 
     return BookResponseDto.fromEntity(book)
@@ -93,6 +94,7 @@ export class BooksController {
       id,
       title: updateBookDto.title,
       author: updateBookDto.author,
+      isbn: updateBookDto.isbn,
     })
 
     return BookResponseDto.fromEntity(book)

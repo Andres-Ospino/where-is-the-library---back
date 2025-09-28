@@ -16,6 +16,9 @@ export class BookResponseDto {
   @ApiProperty({ example: "Miguel de Cervantes", description: "Autor del libro" })
   author!: string
 
+  @ApiProperty({ example: "9783161484100", description: "Código ISBN del libro" })
+  isbn!: string
+
   @ApiProperty({ example: true, description: "Indica si el libro está disponible para préstamo" })
   available!: boolean
 
@@ -24,6 +27,7 @@ export class BookResponseDto {
     dto.id = book.id
     dto.title = book.title
     dto.author = book.author
+    dto.isbn = book.isbn
     dto.available = book.available
     return dto
   }

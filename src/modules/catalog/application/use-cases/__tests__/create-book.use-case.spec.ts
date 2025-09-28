@@ -25,9 +25,10 @@ describe("CreateBookUseCase", () => {
     const command = {
       title: "The Great Gatsby",
       author: "F. Scott Fitzgerald",
+      isbn: "1234567890",
     }
 
-    const expectedBook = Book.fromPersistence(1, command.title, command.author, true)
+    const expectedBook = Book.fromPersistence(1, command.title, command.author, command.isbn, true)
     mockBookRepository.save.mockResolvedValue(expectedBook)
 
     // Act
@@ -38,6 +39,7 @@ describe("CreateBookUseCase", () => {
       expect.objectContaining({
         title: command.title,
         author: command.author,
+        isbn: command.isbn,
         available: true,
       }),
     )
@@ -49,6 +51,7 @@ describe("CreateBookUseCase", () => {
     const command = {
       title: "",
       author: "F. Scott Fitzgerald",
+      isbn: "1234567890",
     }
 
     // Act & Assert
@@ -60,9 +63,20 @@ describe("CreateBookUseCase", () => {
     const command = {
       title: "The Great Gatsby",
       author: "",
+      isbn: "1234567890",
     }
 
     // Act & Assert
     await expect(useCase.execute(command)).rejects.toThrow("Book author cannot be empty")
+  })
+
+  it("should throw validation error for invalid isbn", async () => {
+    const command = {
+      title: "The Great Gatsby",
+      author: "F. Scott Fitzgerald",
+      isbn: "invalid",
+    }
+
+    await expect(useCase.execute(command)).rejects.toThrow("Book ISBN must be a 10 or 13 digit numeric string")
   })
 })

@@ -59,7 +59,7 @@ describe("Loans (e2e)", () => {
     await dataSource.getRepository(MemberOrmEntity).clear()
     await dataSource.getRepository(AuthAccountOrmEntity).clear()
 
-    const book = await bookRepository.save(Book.create("Test Book", "Test Author"))
+    const book = await bookRepository.save(Book.create("Test Book", "Test Author", "1234567890"))
     bookId = book.id as number
 
     const memberResponse = await request(app.getHttpServer())

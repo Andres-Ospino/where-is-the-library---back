@@ -8,6 +8,7 @@ export interface UpdateBookCommand {
   id: number
   title: string
   author: string
+  isbn: string
 }
 
 @Injectable()
@@ -23,7 +24,13 @@ export class UpdateBookUseCase {
       throw new NotFoundError("Book", command.id)
     }
 
-    const updatedBook = Book.fromPersistence(command.id, command.title, command.author, existingBook.available)
+    const updatedBook = Book.fromPersistence(
+      command.id,
+      command.title,
+      command.author,
+      command.isbn,
+      existingBook.available,
+    )
 
     return await this.bookRepository.update(updatedBook)
   }
