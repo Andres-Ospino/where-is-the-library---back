@@ -21,8 +21,8 @@ describe("ListMembersUseCase", () => {
 
   it("should delegate to the repository and return members in the same order", async () => {
     const members = [
-      Member.fromPersistence(2, "Grace Hopper", "grace@example.com"),
-      Member.fromPersistence(1, "Ada Lovelace", "ada@example.com"),
+      Member.fromPersistence(2, "Grace Hopper", "grace@example.com", "+33000000000"),
+      Member.fromPersistence(1, "Ada Lovelace", "ada@example.com", "+44000000000"),
     ]
 
     mockMemberRepository.findAll.mockResolvedValue(members)

@@ -7,6 +7,7 @@ interface MemberRecord {
   id: number
   name: string
   email: string
+  phone: string
 }
 
 @Injectable()
@@ -19,11 +20,12 @@ export class InMemoryMemberRepository implements MemberRepositoryPort {
       id: this.nextId++,
       name: member.name,
       email: member.email,
+      phone: member.phone,
     }
 
     this.members.push(record)
 
-    return Member.fromPersistence(record.id, record.name, record.email)
+    return Member.fromPersistence(record.id, record.name, record.email, record.phone)
   }
 
   async findById(id: number): Promise<Member | null> {
@@ -32,14 +34,14 @@ export class InMemoryMemberRepository implements MemberRepositoryPort {
       return null
     }
 
-    return Member.fromPersistence(record.id, record.name, record.email)
+    return Member.fromPersistence(record.id, record.name, record.email, record.phone)
   }
 
   async findAll(): Promise<Member[]> {
     return this.members
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((record) => Member.fromPersistence(record.id, record.name, record.email))
+      .map((record) => Member.fromPersistence(record.id, record.name, record.email, record.phone))
   }
 
   async findByEmail(email: string): Promise<Member | null> {
@@ -48,7 +50,7 @@ export class InMemoryMemberRepository implements MemberRepositoryPort {
       return null
     }
 
-    return Member.fromPersistence(record.id, record.name, record.email)
+    return Member.fromPersistence(record.id, record.name, record.email, record.phone)
   }
 
   async update(member: Member): Promise<Member> {
@@ -66,11 +68,12 @@ export class InMemoryMemberRepository implements MemberRepositoryPort {
       id,
       name: member.name,
       email: member.email,
+      phone: member.phone,
     }
 
     this.members[index] = updated
 
-    return Member.fromPersistence(updated.id, updated.name, updated.email)
+    return Member.fromPersistence(updated.id, updated.name, updated.email, updated.phone)
   }
 
   async delete(id: number): Promise<void> {

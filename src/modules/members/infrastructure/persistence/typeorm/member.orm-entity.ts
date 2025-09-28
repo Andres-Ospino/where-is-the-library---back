@@ -13,6 +13,9 @@ export class MemberOrmEntity {
   @Column({ length: 255, unique: true })
   email!: string
 
+  @Column({ length: 20 })
+  phone!: string
+
   @OneToMany(() => LoanOrmEntity, (loan) => loan.member)
   loans?: LoanOrmEntity[]
 

@@ -31,6 +31,7 @@ export class MembersController {
     const member = await this.createMemberUseCase.execute({
       name: createMemberDto.name,
       email: createMemberDto.email,
+      phone: createMemberDto.phone,
     })
 
     return MemberResponseDto.fromEntity(member)

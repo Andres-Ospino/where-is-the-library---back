@@ -9,6 +9,7 @@ import { MEMBER_REPOSITORY_TOKEN, type MemberRepositoryPort } from "@/modules/me
 const DEFAULT_ADMIN_EMAIL = "admin@whereisthelibrary.com"
 const DEFAULT_ADMIN_PASSWORD = "A20020515o"
 const DEFAULT_ADMIN_NAME = "Administrador"
+const DEFAULT_ADMIN_PHONE = "+0000000000"
 
 @Injectable()
 export class AuthAccountsSeeder implements OnModuleInit {
@@ -35,7 +36,7 @@ export class AuthAccountsSeeder implements OnModuleInit {
 
     const existingMember = await this.memberRepository.findByEmail(DEFAULT_ADMIN_EMAIL)
     if (!existingMember) {
-      const adminMember = Member.create(DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_EMAIL)
+      const adminMember = Member.create(DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PHONE)
       await this.memberRepository.save(adminMember)
       this.logger.log(`Default admin member ensured for ${DEFAULT_ADMIN_EMAIL}`)
     }

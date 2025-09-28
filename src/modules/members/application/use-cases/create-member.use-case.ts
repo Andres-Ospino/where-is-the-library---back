@@ -6,6 +6,7 @@ import { ConflictError } from "@/modules/shared/errors/conflict.error"
 export interface CreateMemberCommand {
   name: string
   email: string
+  phone: string
 }
 
 @Injectable()
@@ -21,7 +22,7 @@ export class CreateMemberUseCase {
       throw new ConflictError("Member with this email already exists")
     }
 
-    const member = Member.create(command.name, command.email)
+    const member = Member.create(command.name, command.email, command.phone)
     return await this.memberRepository.save(member)
   }
 }

@@ -67,11 +67,13 @@ describe("LoanBookUseCase", () => {
     )
   })
 
+  const memberPhone = "+44123456789"
+
   it("should loan a book successfully", async () => {
     // Arrange
     const command = { bookId: 1, memberId: 1 }
     const book = Book.fromPersistence(1, "Test Book", "Test Author", true)
-    const member = Member.fromPersistence(1, "John Doe", "john@example.com")
+    const member = Member.fromPersistence(1, "John Doe", "john@example.com", memberPhone)
     const loanDate = new Date("2024-01-15")
     const loan = Loan.fromPersistence(1, 1, 1, loanDate)
 
@@ -127,7 +129,7 @@ describe("LoanBookUseCase", () => {
     // Arrange
     const command = { bookId: 1, memberId: 1 }
     const book = Book.fromPersistence(1, "Test Book", "Test Author", false)
-    const member = Member.fromPersistence(1, "John Doe", "john@example.com")
+    const member = Member.fromPersistence(1, "John Doe", "john@example.com", memberPhone)
 
     mockBookRepository.findById.mockResolvedValue(book)
     mockMemberRepository.findById.mockResolvedValue(member)
@@ -139,7 +141,7 @@ describe("LoanBookUseCase", () => {
   it("should throw ConflictError when an active loan already exists for the book", async () => {
     const command = { bookId: 1, memberId: 1 }
     const book = Book.fromPersistence(1, "Test Book", "Test Author", true)
-    const member = Member.fromPersistence(1, "John Doe", "john@example.com")
+    const member = Member.fromPersistence(1, "John Doe", "john@example.com", memberPhone)
     const activeLoan = Loan.fromPersistence(2, 1, 2, new Date("2024-01-10"))
 
     mockBookRepository.findById.mockResolvedValue(book)

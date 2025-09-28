@@ -20,6 +20,8 @@ describe("LoginUseCase", () => {
     password: "Password123!",
   }
 
+  const memberPhone = "+44123456789"
+
   const nowInSeconds = 1_700_000_000
 
   beforeEach(() => {
@@ -65,7 +67,7 @@ describe("LoginUseCase", () => {
     mockHashingService.compare.mockResolvedValue(true)
     mockJwtService.signAsync.mockResolvedValue("signed-token")
     mockJwtService.decode.mockReturnValue({ exp: nowInSeconds + 3600 })
-    const member = Member.fromPersistence(1, "Ada Lovelace", command.email)
+    const member = Member.fromPersistence(1, "Ada Lovelace", command.email, memberPhone)
     mockFindMemberByEmailUseCase.execute.mockResolvedValue(member)
 
     const result = await useCase.execute(command)
@@ -105,7 +107,7 @@ describe("LoginUseCase", () => {
     const authAccount = AuthAccount.fromPersistence(1, command.email, "hashed")
     mockAuthAccountRepository.findByEmail.mockResolvedValue(authAccount)
     mockHashingService.compare.mockResolvedValue(true)
-    const member = Member.create("Ada Lovelace", command.email)
+    const member = Member.create("Ada Lovelace", command.email, memberPhone)
     mockFindMemberByEmailUseCase.execute.mockResolvedValue(member)
 
     await expect(useCase.execute(command)).rejects.toThrow(UnauthorizedException)
